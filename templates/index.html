@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WinConsole - 远程控制面板</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei','Segoe UI',system-ui,sans-serif;background:#1a1b26;color:#c0caf5;display:flex;height:100vh;overflow:hidden}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#1a1b26}
+::-webkit-scrollbar-thumb{background:#565f89;border-radius:3px}
+.sidebar{width:200px;min-width:200px;background:#16171e;border-right:1px solid #1f2130;padding:16px 0;display:flex;flex-direction:column}
+.sidebar h1{font-size:16px;padding:0 16px 16px;color:#7aa2f7;border-bottom:1px solid #1f2130;margin-bottom:8px}
+.sidebar nav{display:flex;flex-direction:column;gap:2px}
+.sidebar nav a{padding:10px 16px;color:#565f89;text-decoration:none;font-size:13px;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+.sidebar nav a:hover{color:#c0caf5;background:#1f2130}
+.sidebar nav a.active{color:#7aa2f7;border-left-color:#7aa2f7;background:#1f2130;font-weight:600}
+.sidebar .badge{float:right;background:#3b4261;color:#a9b1d6;font-size:10px;border-radius:8px;padding:1px 6px}
+.main{flex:1;overflow-y:auto;padding:24px}
+.panel{display:none}
+.panel.active{display:block}
+.panel h2{font-size:18px;margin-bottom:16px;color:#7aa2f7}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.toolbar button,.toolbar select,.toolbar input{padding:6px 14px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:13px;cursor:pointer}
+.toolbar button:hover{background:#2f3044;border-color:#3b4261}
+.toolbar label{font-size:13px;color:#565f89;display:flex;align-items:center;gap:4px}
+.toolbar input[type=number]{width:60px;text-align:center}
+.toolbar input[type=checkbox]{accent-color:#7aa2f7}
+.screenshot-wrap{background:#0f0f14;border-radius:8px;border:1px solid #1f2130;overflow:hidden;display:flex;justify-content:center;align-items:center;min-height:300px}
+.screenshot-wrap img{max-width:100%;max-height:75vh;display:block}
+.table-wrap{overflow-x:auto;border-radius:6px;border:1px solid #1f2130}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:#1f2130}
+th{padding:10px 12px;text-align:left;cursor:pointer;color:#565f89;font-weight:600;white-space:nowrap;user-select:none}
+th:hover{color:#c0caf5}
+td{padding:8px 12px;border-top:1px solid #1f2130;white-space:nowrap}
+tr:hover td{background:#1f2130}
+.btn-kill{padding:3px 10px;border:none;border-radius:3px;background:#f7768e;color:#1a1b26;cursor:pointer;font-size:11px}
+.btn-kill:hover{background:#ff9eab}
+.terminal{background:#0f0f14;border-radius:6px;border:1px solid #1f2130;padding:12px;font-family:'Consolas','Cascadia Code','Fira Code',monospace;font-size:13px;white-space:pre-wrap;word-break:break-all;height:400px;overflow-y:auto;line-height:1.5}
+.cmd-row{display:flex;gap:8px;margin-top:8px}
+.cmd-row input{flex:1;padding:8px 12px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:13px;outline:none}
+.cmd-row input:focus{border-color:#3b4261}
+.cmd-row button{padding:8px 16px;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600}
+.btn-run{background:#7aa2f7;color:#1a1b26}
+.btn-run:hover{background:#89b4fa}
+.btn-stop{background:#f7768e;color:#1a1b26}
+.btn-stop:hover{background:#ff9eab}
+.control-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:800px}
+.control-card{background:#16171e;border:1px solid #1f2130;border-radius:6px;padding:16px}
+.control-card h3{font-size:14px;color:#c0caf5;margin-bottom:12px}
+.control-card label{display:block;font-size:12px;color:#565f89;margin-bottom:4px}
+.control-card .row{display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap}
+.control-card input[type=number]{width:80px;padding:5px 8px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:3px;font-size:13px}
+.control-card input[type=text]{flex:1;padding:5px 8px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:3px;font-size:13px}
+.control-card select{padding:5px 8px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:3px;font-size:13px}
+.control-card button{padding:5px 12px;border:none;border-radius:3px;background:#3b4261;color:#c0caf5;cursor:pointer;font-size:12px}
+.control-card button:hover{background:#565f89}
+.control-card button.primary{background:#7aa2f7;color:#1a1b26}
+.control-card button.primary:hover{background:#89b4fa}
+.keylog-box{background:#0f0f14;border:1px solid #1f2130;border-radius:6px;padding:12px;font-family:'Consolas',monospace;font-size:13px;height:400px;overflow-y:auto;line-height:1.6}
+.keylog-box .entry{display:flex;gap:8px;padding:2px 0}
+.keylog-box .time{color:#565f89;white-space:nowrap}
+.keylog-box .key{color:#c0caf5}
+.keylog-box .key.special{color:#f7768e;font-style:italic}
+#xterm-container .xterm{padding:4px}
+#xterm-container .xterm-viewport{scrollbar-width:thin}
+#xterm-container .xterm-rows{font-variant-ligatures:none}
+@media(max-width:768px){
+.sidebar{width:140px;min-width:140px}
+.control-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h1>WinConsole</h1>
+  <nav>
+    <a class="active" data-panel="screenshot" onclick="switchPanel('screenshot')">屏幕</a>
+    <a data-panel="processes" onclick="switchPanel('processes')">进程</a>
+    <a data-panel="terminal" onclick="switchPanel('terminal')">终端</a>
+    <a data-panel="mouse" onclick="switchPanel('mouse')">鼠标</a>
+    <a data-panel="keyboard" onclick="switchPanel('keyboard')">键盘</a>
+    <a data-panel="keylog" onclick="switchPanel('keylog')">按键 <span class="badge" id="keylog-badge">0</span></a>
+  </nav>
+</div>
+
+<div class="main">
+
+<!-- ═══ 屏幕截图 ═══ -->
+<div id="panel-screenshot" class="panel active">
+  <h2>屏幕截图</h2>
+  <div class="toolbar">
+    <button onclick="triggerScreenshot()">立即截屏</button>
+    <label><input type="checkbox" id="ss-auto" checked onchange="toggleAutoRefresh()"> 自动</label>
+    <label>间隔 <input type="number" id="ss-interval" value="3" min="1" onchange="updateInterval()"> 秒</label>
+    <span id="ss-status" style="font-size:12px;color:#565f89"></span>
+  </div>
+  <div class="screenshot-wrap">
+    <img id="screenshot-img" src="/api/screenshot" alt="截图">
+  </div>
+</div>
+
+<!-- ═══ 进程列表 ═══ -->
+<div id="panel-processes" class="panel">
+  <h2>进程列表</h2>
+  <div class="toolbar">
+    <button onclick="refreshProcesses()">刷新</button>
+    <label>排序 <select id="proc-sort" onchange="refreshProcesses()">
+      <option value="cpu">CPU</option>
+      <option value="memory">内存</option>
+      <option value="name">名称</option>
+      <option value="pid">PID</option>
+    </select></label>
+    <input type="text" id="proc-search" placeholder="搜索进程..." oninput="filterProcesses()" style="padding:6px 12px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:13px;width:200px">
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortProcesses('pid')">PID</th>
+          <th onclick="sortProcesses('name')">名称</th>
+          <th onclick="sortProcesses('cpu')">CPU %</th>
+          <th onclick="sortProcesses('memory')">内存 %</th>
+          <th>状态</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="proc-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ 终端 (xterm.js) ═══ -->
+<div id="panel-terminal" class="panel">
+  <h2>终端 <span style="font-size:12px;color:#565f89;font-weight:normal">cmd.exe</span></h2>
+  <div class="toolbar">
+    <button onclick="clearTerminal()">清屏</button>
+    <button onclick="sendCtrlC()" style="background:#f7768e">中断 (Ctrl+C)</button>
+    <span id="term-status" style="font-size:12px;color:#565f89">等待连接...</span>
+  </div>
+  <div id="xterm-container" style="height:calc(100vh - 200px);border-radius:6px;overflow:hidden;border:1px solid #1f2130"></div>
+</div>
+
+<!-- ═══ 鼠标控制 ═══ -->
+<div id="panel-mouse" class="panel">
+  <h2>鼠标控制</h2>
+  <div class="control-grid">
+    <div class="control-card">
+      <h3>移动 / 点击</h3>
+      <div class="row">
+        <label>X <input type="number" id="mouse-x" value="500"></label>
+        <label>Y <input type="number" id="mouse-y" value="500"></label>
+        <button onclick="getMousePos()" title="获取鼠标当前位置">获取</button>
+      </div>
+      <div class="row">
+        <select id="mouse-btn">
+          <option value="left">左键</option>
+          <option value="right">右键</option>
+          <option value="middle">中键</option>
+        </select>
+        <button onclick="mouseAction('move')">移动</button>
+        <button class="primary" onclick="mouseAction('click')">点击</button>
+        <button onclick="mouseAction('doubleClick')">双击</button>
+        <button onclick="mouseAction('rightClick')">右键</button>
+      </div>
+    </div>
+    <div class="control-card">
+      <h3>滚动</h3>
+      <div class="row">
+        <label>行数 <input type="number" id="scroll-clicks" value="-3" style="width:60px"></label>
+        <button onclick="mouseAction('scroll')">滚动</button>
+      </div>
+      <h3 style="margin-top:12px;font-size:14px">拖拽</h3>
+      <div class="row">
+        <label>目标 X <input type="number" id="drag-x" value="600"></label>
+        <label>目标 Y <input type="number" id="drag-y" value="600"></label>
+        <button onclick="mouseAction('drag')">拖拽</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 键盘输入 ═══ -->
+<div id="panel-keyboard" class="panel">
+  <h2>键盘输入</h2>
+  <div class="control-grid">
+    <div class="control-card">
+      <h3>输入文本</h3>
+      <div class="row" style="flex-direction:column;align-items:stretch">
+        <textarea id="kb-text" rows="4" style="padding:8px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:13px;font-family:inherit;resize:vertical;width:100%" placeholder="要输入的文本..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <label style="font-size:12px;color:#565f89">延迟 <input type="number" id="kb-interval" value="0" step="0.01" style="width:60px"> 秒</label>
+          <button class="primary" onclick="kbType()">输入</button>
+        </div>
+      </div>
+    </div>
+    <div class="control-card">
+      <h3>热键 / 单键</h3>
+      <div class="row">
+        <label>按键 <input type="text" id="kb-single" placeholder="如 enter, esc, a" style="width:120px"></label>
+        <button onclick="kbPress()">按下</button>
+      </div>
+      <div class="row">
+        <label>组合键 <input type="text" id="kb-combo" placeholder="如 ctrl+c, alt+tab" style="width:160px"></label>
+        <button onclick="kbHotkey()">发送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 按键记录 ═══ -->
+<div id="panel-keylog" class="panel">
+  <h2>按键记录</h2>
+  <div class="toolbar">
+    <button onclick="clearKeylog()">清空</button>
+    <label><input type="checkbox" id="kl-auto" checked> 自动滚动</label>
+    <span style="font-size:12px;color:#565f89" id="kl-count"></span>
+  </div>
+  <div class="keylog-box" id="keylog-box"></div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+let currentPanel = 'screenshot';
+function switchPanel(name) {
+  currentPanel = name;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+  document.querySelector(`.sidebar nav a[data-panel="${name}"]`).classList.add('active');
+  if (name === 'processes') refreshProcesses();
+  if (name === 'keylog') refreshKeylog();
+}
+
+// ── 截图 ──
+let ssAutoRefresh = true;
+let ssTimer = null;
+
+function updateScreenshot() {
+  const img = document.getElementById('screenshot-img');
+  img.src = '/api/screenshot?' + Date.now();
+}
+function triggerScreenshot() {
+  const img = document.getElementById('screenshot-img');
+  img.src = '/api/screenshot?trigger=1&' + Date.now();
+  document.getElementById('ss-status').textContent = '已截屏 ' + new Date().toLocaleTimeString();
+}
+function toggleAutoRefresh() {
+  ssAutoRefresh = document.getElementById('ss-auto').checked;
+  setupScreenshotTimer();
+}
+function setupScreenshotTimer() {
+  if (ssTimer) { clearInterval(ssTimer); ssTimer = null; }
+  if (ssAutoRefresh) {
+    ssTimer = setInterval(updateScreenshot, parseInt(document.getElementById('ss-interval').value) * 1000);
+  }
+}
+function updateInterval() {
+  if (ssAutoRefresh) setupScreenshotTimer();
+  fetch('/api/screenshot/config', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({interval: parseInt(document.getElementById('ss-interval').value)})
+  });
+}
+setupScreenshotTimer();
+
+// ── 进程 ──
+let procData = [];
+async function refreshProcesses() {
+  const sort = document.getElementById('proc-sort').value;
+  try {
+    const r = await fetch('/api/processes?sort='+sort+'&limit=200');
+    const d = await r.json();
+    procData = d.processes || [];
+  } catch(e) { procData = []; }
+  renderProcesses();
+}
+function renderProcesses() {
+  const q = document.getElementById('proc-search').value.toLowerCase();
+  const filtered = q ? procData.filter(p => (p.name||'').toLowerCase().includes(q) || String(p.pid).includes(q)) : procData;
+  document.getElementById('proc-tbody').innerHTML = filtered.map(p => `<tr>
+    <td>${p.pid}</td>
+    <td>${esc(p.name||'')}</td>
+    <td>${p.cpu_percent.toFixed(1)}</td>
+    <td>${p.memory_percent.toFixed(1)}</td>
+    <td>${p.status||''}</td>
+    <td><button class="btn-kill" onclick="killProc(${p.pid})">结束</button></td>
+  </tr>`).join('');
+}
+function filterProcesses() { renderProcesses(); }
+function sortProcesses(col) {
+  document.getElementById('proc-sort').value = col;
+  refreshProcesses();
+}
+async function killProc(pid) {
+  if (!confirm('确定结束进程 ' + pid + '？')) return;
+  try {
+    await fetch('/api/processes/'+pid+'/kill', {method:'POST'});
+    refreshProcesses();
+  } catch(e) { alert('失败：'+e); }
+}
+setInterval(() => { if (currentPanel === 'processes') refreshProcesses(); }, 3000);
+
+// ── 终端 (xterm.js + WebSocket + local echo + 前端prompt) ──
+let ws = null;
+let xterm = null;
+let fitAddon = null;
+let currentPath = '';
+let inputBuffer = '';
+let promptStr = '>';
+
+function updatePath(cmd) {
+  let arg = cmd.substring(2).trim();
+  // /d flag
+  if (arg.startsWith('/d ')) arg = arg.substring(3).trim();
+  // Strip quotes
+  if ((arg.startsWith('"') && arg.endsWith('"')) ||
+      (arg.startsWith("'") && arg.endsWith("'"))) arg = arg.slice(1, -1);
+  // No arg => report only, no change
+  if (!arg) return currentPath;
+  // Drive switch (D: or D:\path)
+  if (/^[A-Za-z]:/.test(arg)) {
+    if (arg.length === 2) arg += '\\';
+    return arg;
+  }
+  // Absolute from root of current drive
+  if (arg.startsWith('\\') || arg.startsWith('/')) {
+    arg = arg.replace(/\//g, '\\');
+    return currentPath.substring(0, 2) + arg;
+  }
+  // Relative
+  arg = arg.replace(/\//g, '\\');
+  const parts = currentPath.split('\\');
+  for (const p of arg.split('\\')) {
+    if (p === '..') { if (parts.length > 1) parts.pop(); }
+    else if (p !== '' && p !== '.') parts.push(p);
+  }
+  return parts.join('\\');
+}
+
+function fetchCwd() {
+  fetch('/api/terminal/cwd').then(r => r.json()).then(d => {
+    currentPath = d.cwd || '';
+    promptStr = currentPath ? currentPath + '>' : '>';
+  }).catch(() => {
+    promptStr = '>';
+  });
+}
+
+function showPrompt() {
+  xterm.write('\r\n' + promptStr);
+}
+
+function initXterm() {
+  const container = document.getElementById('xterm-container');
+  if (!container) return;
+  xterm = new Terminal({
+    cursorBlink: true,
+    cursorStyle: 'block',
+    fontSize: 14,
+    fontFamily: 'Consolas, "Cascadia Code", "Fira Code", monospace',
+    theme: {
+      background: '#0f0f14', foreground: '#c0caf5', cursor: '#7aa2f7',
+      selectionBackground: '#3b4261',
+      black: '#1a1b26', red: '#f7768e', green: '#9ece6a', yellow: '#e0af68',
+      blue: '#7aa2f7', magenta: '#bb9af7', cyan: '#7dcfff', white: '#c0caf5',
+      brightBlack: '#565f89', brightRed: '#f7768e', brightGreen: '#9ece6a',
+      brightYellow: '#e0af68', brightBlue: '#7aa2f7', brightMagenta: '#bb9af7',
+      brightCyan: '#7dcfff', brightWhite: '#c0caf5',
+    }
+  });
+  fitAddon = new FitAddon.FitAddon();
+  xterm.loadAddon(fitAddon);
+  xterm.open(container);
+  fitAddon.fit();
+  const ro = new ResizeObserver(() => fitAddon.fit());
+  ro.observe(container);
+  connectWs();
+  xterm.onKey(e => {
+    const ch = e.key;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (ch === '\r') {
+      const cmd = inputBuffer;
+      xterm.write('\r\n');
+      ws.send(inputBuffer + '\r');
+      inputBuffer = '';
+      // Update path for cd commands locally
+      if (/^cd\b/i.test(cmd.trim())) {
+        currentPath = updatePath(cmd);
+        promptStr = currentPath ? currentPath + '>' : '>';
+      }
+      // Fetch real CWD non-blocking (for edge cases)
+      setTimeout(fetchCwd, 100);
+      xterm.write(promptStr);
+    } else if (ch === '\x7f') {
+      if (inputBuffer.length > 0) {
+        inputBuffer = inputBuffer.slice(0, -1);
+        xterm.write('\b \b');
+      }
+    } else if (ch === '\x03') {
+      xterm.write('^C\r\n');
+      ws.send('\x03');
+      inputBuffer = '';
+      xterm.write(promptStr);
+    } else if (ch === '\x0c') {
+      xterm.clear();
+      xterm.write(promptStr);
+    } else if (ch.length === 1 && ch >= ' ') {
+      inputBuffer += ch;
+      xterm.write(ch);
+    }
+  });
+}
+
+function connectWs() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}/terminal/ws`);
+  ws.onopen = () => {
+    document.getElementById('term-status').textContent = '已连接';
+    fetchCwd();
+    setTimeout(showPrompt, 300);
+  };
+  ws.onmessage = e => xterm.write(e.data);
+  ws.onclose = () => {
+    document.getElementById('term-status').textContent = '已断开，重连中...';
+    inputBuffer = '';
+    setTimeout(connectWs, 1500);
+  };
+  ws.onerror = () => ws.close();
+}
+
+function clearTerminal() {
+  if (xterm) { xterm.clear(); xterm.write(promptStr); }
+}
+function sendCtrlC() {
+  if (xterm) { xterm.write('^C\r\n'); }
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send('\x03');
+  if (xterm) xterm.write(promptStr);
+}
+
+initXterm();
+
+// ── 鼠标 ──
+async function mouseAction(action) {
+  const data = {action};
+  const x = parseInt(document.getElementById('mouse-x').value);
+  const y = parseInt(document.getElementById('mouse-y').value);
+  if (!isNaN(x) && !isNaN(y)) { data.x = x; data.y = y; }
+  if (action === 'click' || action === 'rightClick') data.button = document.getElementById('mouse-btn').value;
+  if (action === 'scroll') data.clicks = parseInt(document.getElementById('scroll-clicks').value) || -1;
+  if (action === 'drag') {
+    const dx = parseInt(document.getElementById('drag-x').value);
+    const dy = parseInt(document.getElementById('drag-y').value);
+    if (!isNaN(dx) && !isNaN(dy)) { data.x = dx; data.y = dy; }
+  }
+  try {
+    const r = await fetch('/api/mouse', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
+    const d = await r.json();
+    if (d.error) alert(d.error);
+  } catch(e) { alert('错误：'+e); }
+}
+async function getMousePos() {
+  try {
+    const r = await fetch('/api/mouse', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'getPos'})});
+    const d = await r.json();
+    if (d.x !== undefined) { document.getElementById('mouse-x').value = d.x; document.getElementById('mouse-y').value = d.y; }
+  } catch(e) {}
+}
+
+// ── 键盘 ──
+async function kbType() {
+  const text = document.getElementById('kb-text').value;
+  if (!text) return;
+  const interval = parseFloat(document.getElementById('kb-interval').value) || 0;
+  try { await fetch('/api/keyboard', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'type', text, interval})}); } catch(e) { alert('错误：'+e); }
+}
+async function kbPress() {
+  const key = document.getElementById('kb-single').value.trim();
+  if (!key) return;
+  try { await fetch('/api/keyboard', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'press', key})}); } catch(e) { alert('错误：'+e); }
+  document.getElementById('kb-single').value = '';
+}
+async function kbHotkey() {
+  const combo = document.getElementById('kb-combo').value.trim();
+  if (!combo) return;
+  const keys = combo.replace(/\s+/g,'').split('+');
+  try { await fetch('/api/keyboard', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'hotkey', keys})}); } catch(e) { alert('错误：'+e); }
+  document.getElementById('kb-combo').value = '';
+}
+
+// ── 按键记录 (WebSocket) ──
+let klAutoScroll = true;
+let klWs = null;
+let klReconnectTimer = null;
+
+function connectKlWs() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  klWs = new WebSocket(`${proto}//${location.host}/keylog/ws`);
+  klWs.onmessage = e => {
+    try {
+      const entry = JSON.parse(e.data);
+      appendKeylogEntry(entry);
+    } catch(_) {}
+  };
+  klWs.onclose = () => {
+    if (klReconnectTimer) clearTimeout(klReconnectTimer);
+    klReconnectTimer = setTimeout(connectKlWs, 3000);
+  };
+  klWs.onerror = () => klWs.close();
+}
+
+function appendKeylogEntry(e) {
+  const box = document.getElementById('keylog-box');
+  const div = document.createElement('div');
+  div.className = 'entry';
+  const isSpecial = e.key.startsWith('[');
+  div.innerHTML = `<span class="time">${e.time.slice(11,19)}</span><span class="key${isSpecial?' special':''}">${esc(e.key)}</span>`;
+  box.appendChild(div);
+  updateKeylogBadge();
+  if (klAutoScroll) box.scrollTop = box.scrollHeight;
+}
+
+// Initial load via REST (existing entries)
+async function loadKeylogHistory() {
+  try {
+    const r = await fetch('/api/keylog');
+    const d = await r.json();
+    const entries = d.entries || [];
+    for (const e of entries) appendKeylogEntry(e);
+  } catch(_) {}
+}
+
+function clearKeylog() {
+  document.getElementById('keylog-box').innerHTML = '';
+  document.getElementById('keylog-badge').textContent = '0';
+  document.getElementById('kl-count').textContent = '';
+  fetch('/api/keylog/clear', {method:'POST'}).catch(()=>{});
+}
+function updateKeylogBadge() {
+  const count = document.getElementById('keylog-box').children.length;
+  document.getElementById('keylog-badge').textContent = count;
+  document.getElementById('kl-count').textContent = count + ' 条记录';
+}
+document.getElementById('kl-auto').addEventListener('change', function() { klAutoScroll = this.checked; });
+connectKlWs();
+loadKeylogHistory();
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>

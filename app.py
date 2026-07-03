@@ -530,28 +530,40 @@ def log(msg):
 REG_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 REG_NAME = "WinConsole"
 
+def show_messagebox(title, message, style=0):
+    """Show Windows MessageBox dialog."""
+    # MB_OK = 0, MB_ICONINFO = 0x40, MB_ICONWARNING = 0x30, MB_ICONERROR = 0x10
+    ctypes.windll.user32.MessageBoxW(0, message, title, style)
+
 def install_startup():
-    """Add to HKCU Run registry key for autostart on boot (silent)."""
+    """Add to HKCU Run registry key for autostart on boot."""
     import winreg
     exe_path = sys.executable if not getattr(sys, 'frozen', False) else sys.argv[0]
     try:
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_KEY, 0, winreg.KEY_SET_VALUE)
         winreg.SetValueEx(key, REG_NAME, 0, winreg.REG_SZ, f'"{exe_path}"')
         winreg.CloseKey(key)
+        log("Install startup success")
+        return True
     except Exception as e:
         log(f"Install startup failed: {e}")
+        return False
 
 def uninstall_startup():
-    """Remove from HKCU Run registry key (silent)."""
+    """Remove from HKCU Run registry key."""
     import winreg
     try:
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_KEY, 0, winreg.KEY_SET_VALUE)
         winreg.DeleteValue(key, REG_NAME)
         winreg.CloseKey(key)
+        log("Uninstall startup success")
+        return True
     except FileNotFoundError:
-        pass
+        log("Startup entry not found (already removed)")
+        return True
     except Exception as e:
         log(f"Uninstall startup failed: {e}")
+        return False
 
 # ── Single instance ──────────────────────────────────────────
 MUTEX_NAME = "Global\\WinConsole-{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
@@ -613,10 +625,18 @@ def main():
 
     args = sys.argv[1:]
     if '--install' in args:
-        install_startup()
+        success = install_startup()
+        if success:
+            show_messagebox("WinConsole", "已成功添加开机自启动！\n下次开机将自动运行。", 0x40)
+        else:
+            show_messagebox("WinConsole", "添加开机自启动失败！\n请检查是否有足够的权限。", 0x10)
         return
     if '--uninstall' in args:
-        uninstall_startup()
+        success = uninstall_startup()
+        if success:
+            show_messagebox("WinConsole", "已成功移除开机自启动！\n下次开机将不再自动运行。", 0x40)
+        else:
+            show_messagebox("WinConsole", "移除开机自启动失败！\n请检查是否有足够的权限。", 0x10)
         return
     if '--port' in args:
         idx = args.index('--port') + 1

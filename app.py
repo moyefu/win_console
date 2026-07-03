@@ -531,9 +531,16 @@ REG_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 REG_NAME = "WinConsole"
 
 def show_messagebox(title, message, style=0):
-    """Show Windows MessageBox dialog."""
-    # MB_OK = 0, MB_ICONINFO = 0x40, MB_ICONWARNING = 0x30, MB_ICONERROR = 0x10
-    ctypes.windll.user32.MessageBoxW(0, message, title, style)
+    """Show Windows MessageBox dialog and print to console if available."""
+    # MB_OK = 0, MB_ICONINFO = 0x40, MB_ICONWARNING = 0x30, MB_ICONERROR = 0x10, MB_SYSTEMMODAL = 0x1000
+    # Add MB_SYSTEMMODAL to make the dialog stay on top
+    try:
+        # Print to console if available
+        print(f"\n{title}: {message}\n")
+    except:
+        pass
+    # Show MessageBox
+    ctypes.windll.user32.MessageBoxW(0, message, title, style | 0x1000)
 
 def install_startup():
     """Add to HKCU Run registry key for autostart on boot."""
@@ -621,9 +628,9 @@ def hide_console():
 
 # ── Entry point ─────────────────────────────────────────────
 def main():
-    check_single_instance()
-
     args = sys.argv[1:]
+
+    # Handle install/uninstall before single instance check
     if '--install' in args:
         success = install_startup()
         if success:
@@ -638,6 +645,10 @@ def main():
         else:
             show_messagebox("WinConsole", "移除开机自启动失败！\n请检查是否有足够的权限。", 0x10)
         return
+
+    # Check single instance for normal operation
+    check_single_instance()
+
     if '--port' in args:
         idx = args.index('--port') + 1
         if idx < len(args):

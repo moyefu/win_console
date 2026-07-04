@@ -548,7 +548,7 @@ def install_startup():
     exe_path = sys.executable if not getattr(sys, 'frozen', False) else sys.argv[0]
     try:
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_KEY, 0, winreg.KEY_SET_VALUE)
-        winreg.SetValueEx(key, REG_NAME, 0, winreg.REG_SZ, f'"{exe_path}"')
+        winreg.SetValueEx(key, REG_NAME, 0, winreg.REG_SZ, f'"{exe_path}" --tray')
         winreg.CloseKey(key)
         log("Install startup success")
         return True
@@ -673,14 +673,15 @@ def main():
 
     # (no auto-open)
 
-    # Tray icon (blocking, message loop in main thread)
-    icon = setup_tray()
-    if icon:
-        icon.run()
-    else:
-        # Fallback: keep main thread alive
-        while True:
-            time.sleep(1)
+    # Tray icon only with --tray flag (blocking, message loop in main thread)
+    if '--tray' in args:
+        icon = setup_tray()
+        if icon:
+            icon.run()
+            return
+    # Keep main thread alive
+    while True:
+        time.sleep(1)
 
 if __name__ == '__main__':
     main()

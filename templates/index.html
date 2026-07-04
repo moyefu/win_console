@@ -13,17 +13,130 @@ body{font-family:'Microsoft YaHei','Segoe UI',system-ui,sans-serif;background:#1
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:#1a1b26}
 ::-webkit-scrollbar-thumb{background:#565f89;border-radius:3px}
-.sidebar{width:200px;min-width:200px;background:#16171e;border-right:1px solid #1f2130;padding:16px 0;display:flex;flex-direction:column}
-.sidebar h1{font-size:16px;padding:0 16px 16px;color:#7aa2f7;border-bottom:1px solid #1f2130;margin-bottom:8px}
-.sidebar nav{display:flex;flex-direction:column;gap:2px}
-.sidebar nav a{padding:10px 16px;color:#565f89;text-decoration:none;font-size:13px;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+
+/* ═══ 侧边栏 ═══ */
+.sidebar{width:220px;min-width:220px;background:#16171e;border-right:1px solid #1f2130;display:flex;flex-direction:column}
+.sidebar-header{padding:20px 16px;border-bottom:1px solid #1f2130}
+.sidebar-header h1{font-size:18px;color:#7aa2f7}
+.sidebar-header p{font-size:11px;color:#565f89;margin-top:2px}
+.sidebar nav{display:flex;flex-direction:column;gap:2px;padding:8px 0;flex:1}
+.sidebar nav a{padding:10px 16px;color:#565f89;text-decoration:none;font-size:13px;cursor:pointer;transition:all .15s;border-left:3px solid transparent;display:flex;align-items:center;gap:8px}
 .sidebar nav a:hover{color:#c0caf5;background:#1f2130}
 .sidebar nav a.active{color:#7aa2f7;border-left-color:#7aa2f7;background:#1f2130;font-weight:600}
-.sidebar .badge{float:right;background:#3b4261;color:#a9b1d6;font-size:10px;border-radius:8px;padding:1px 6px}
+.sidebar nav a .icon{font-size:16px;width:20px;text-align:center}
+.sidebar nav a .label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidebar nav a .badge{background:#f7768e;color:#1a1b26;font-size:10px;border-radius:8px;padding:1px 6px;font-weight:600}
+.sidebar nav .sep{height:1px;background:#1f2130;margin:6px 16px}
+.sidebar nav a.device-link{padding-left:24px;font-size:12px}
+
+/* ═══ 主内容区 ═══ */
 .main{flex:1;overflow-y:auto;padding:24px}
-.panel{display:none}
-.panel.active{display:block}
-.panel h2{font-size:18px;margin-bottom:16px;color:#7aa2f7}
+.page{display:none}
+.page.active{display:block}
+.page h2{font-size:20px;margin-bottom:20px;color:#c0caf5;font-weight:600}
+.page h2 .sub{font-size:13px;color:#565f89;font-weight:normal;margin-left:8px}
+
+/* ═══ 仪表盘 ═══ */
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#16171e;border:1px solid #1f2130;border-radius:8px;padding:20px;display:flex;align-items:center;gap:16px;transition:border-color .2s}
+.stat-card:hover{border-color:#2f3044}
+.stat-card .icon{font-size:32px;width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.stat-card .info{flex:1}
+.stat-card .info .value{font-size:28px;font-weight:700;line-height:1.2}
+.stat-card .info .label{font-size:12px;color:#565f89;margin-top:2px}
+.stat-card.total .icon{background:rgba(122,162,247,0.15);color:#7aa2f7}
+.stat-card.total .value{color:#7aa2f7}
+.stat-card.online .icon{background:rgba(158,206,106,0.15);color:#9ece6a}
+.stat-card.online .value{color:#9ece6a}
+.stat-card.offline .icon{background:rgba(247,118,142,0.15);color:#f7768e}
+.stat-card.offline .value{color:#f7768e}
+.stat-card.alert .icon{background:rgba(224,175,104,0.15);color:#e0af68}
+.stat-card.alert .value{color:#e0af68}
+.alert-section h3{font-size:15px;color:#c0caf5;margin-bottom:12px}
+.alert-list{background:#16171e;border:1px solid #1f2130;border-radius:8px;overflow:hidden}
+.alert-item{padding:10px 16px;border-bottom:1px solid #1f2130;display:flex;align-items:center;gap:12px;font-size:13px}
+.alert-item:last-child{border-bottom:none}
+.alert-item .alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.alert-item .alert-dot.warn{background:#e0af68}
+.alert-item .alert-dot.error{background:#f7768e}
+.alert-item .alert-time{color:#565f89;white-space:nowrap;font-size:12px}
+.alert-item .alert-device{color:#7aa2f7}
+.alert-item .alert-type{color:#c0caf5;flex:1}
+.alert-empty{padding:24px;text-align:center;color:#565f89;font-size:13px}
+
+/* ═══ 设备管理 ═══ */
+.filter-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.filter-bar button,.filter-bar select,.filter-bar input{padding:7px 14px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:13px;cursor:pointer}
+.filter-bar button:hover{background:#2f3044}
+.filter-bar input[type=text]{width:200px}
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid #1f2130;margin-bottom:24px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:#1f2130}
+th{padding:10px 12px;text-align:left;color:#565f89;font-weight:600;white-space:nowrap;user-select:none}
+td{padding:8px 12px;border-top:1px solid #1f2130;white-space:nowrap}
+tr:hover td{background:#1f2130}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.status-dot.on{background:#9ece6a}
+.status-dot.off{background:#f7768e}
+.btn-sm{padding:4px 10px;border:none;border-radius:3px;cursor:pointer;font-size:12px;margin-right:4px}
+.btn-detail{background:#7aa2f7;color:#1a1b26}
+.btn-detail:hover{background:#89b4fa}
+.btn-group{background:#bb9af7;color:#1a1b26}
+.btn-group:hover{background:#c9a8ff}
+.btn-del{background:#f7768e;color:#1a1b26}
+.btn-del:hover{background:#ff9eab}
+.remark-cell{cursor:pointer;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.remark-cell:hover{background:rgba(122,162,247,.15);border-radius:4px}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);display:flex;justify-content:center;align-items:center;z-index:1000}
+.modal-content{background:#1a1d23;padding:20px;border-radius:8px;max-width:400px;width:90%;color:#c0caf5}
+.modal-content h3{margin:0 0 10px;color:#7aa2f7}
+.modal-buttons{text-align:right}
+.group-section{margin-top:24px}
+.group-section h3{font-size:15px;color:#c0caf5;margin-bottom:12px}
+.group-cards{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.group-card{background:#16171e;border:1px solid #1f2130;border-radius:6px;padding:8px 14px;font-size:13px;display:flex;align-items:center;gap:8px}
+.group-card .g-name{color:#7aa2f7}
+.group-card button{border:none;background:none;cursor:pointer;font-size:12px;padding:2px 4px}
+.group-card .g-edit{color:#565f89}
+.group-card .g-edit:hover{color:#7aa2f7}
+.group-card .g-del{color:#565f89}
+.group-card .g-del:hover{color:#f7768e}
+.group-add{display:flex;gap:8px;align-items:center}
+.group-add input{padding:6px 10px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:13px;width:160px}
+.group-add button{padding:6px 14px;border:none;border-radius:4px;background:#7aa2f7;color:#1a1b26;cursor:pointer;font-size:13px;font-weight:600}
+.group-add button:hover{background:#89b4fa}
+
+/* ═══ 设备详情 ═══ */
+.detail-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.btn-back{padding:6px 12px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;cursor:pointer;font-size:13px}
+.btn-back:hover{background:#2f3044}
+.detail-header h2{flex:1}
+.detail-info{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:900px){.detail-info{grid-template-columns:1fr}}
+.info-card{background:#16171e;border:1px solid #1f2130;border-radius:8px;padding:16px}
+.info-card h3{font-size:14px;color:#7aa2f7;margin-bottom:12px}
+.info-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.info-row .info-label{color:#565f89}
+.info-row .info-value{color:#c0caf5;font-weight:500}
+.res-monitor{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.res-item{background:#16171e;border:1px solid #1f2130;border-radius:8px;padding:16px}
+.res-item h3{font-size:14px;color:#c0caf5;margin-bottom:10px}
+.progress-bar{height:12px;background:#1f2130;border-radius:6px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:6px;transition:width .5s}
+.progress-fill.cpu{background:linear-gradient(90deg,#7aa2f7,#89b4fa)}
+.progress-fill.mem{background:linear-gradient(90deg,#9ece6a,#b9f27e)}
+.res-value{font-size:24px;font-weight:700;color:#7aa2f7}
+.res-value.mem{color:#9ece6a}
+
+/* ═══ 远程控制标签页 ═══ */
+.tab-bar{display:flex;gap:2px;border-bottom:1px solid #1f2130;margin-bottom:16px}
+.tab-bar a{padding:10px 16px;color:#565f89;text-decoration:none;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab-bar a:hover{color:#c0caf5}
+.tab-bar a.active{color:#7aa2f7;border-bottom-color:#7aa2f7;font-weight:600}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ═══ 截图 ═══ */
 .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
 .toolbar button,.toolbar select,.toolbar input{padding:6px 14px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:13px;cursor:pointer}
 .toolbar button:hover{background:#2f3044;border-color:#3b4261}
@@ -32,25 +145,25 @@ body{font-family:'Microsoft YaHei','Segoe UI',system-ui,sans-serif;background:#1
 .toolbar input[type=checkbox]{accent-color:#7aa2f7}
 .screenshot-wrap{background:#0f0f14;border-radius:8px;border:1px solid #1f2130;overflow:hidden;display:flex;justify-content:center;align-items:center;min-height:300px}
 .screenshot-wrap img{max-width:100%;max-height:75vh;display:block}
-.table-wrap{overflow-x:auto;border-radius:6px;border:1px solid #1f2130}
-table{width:100%;border-collapse:collapse;font-size:13px}
-thead{background:#1f2130}
-th{padding:10px 12px;text-align:left;cursor:pointer;color:#565f89;font-weight:600;white-space:nowrap;user-select:none}
-th:hover{color:#c0caf5}
-td{padding:8px 12px;border-top:1px solid #1f2130;white-space:nowrap}
-tr:hover td{background:#1f2130}
+
+/* ═══ 进程 ═══ */
+.proc-search{padding:6px 12px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:13px;width:200px}
 .btn-kill{padding:3px 10px;border:none;border-radius:3px;background:#f7768e;color:#1a1b26;cursor:pointer;font-size:11px}
 .btn-kill:hover{background:#ff9eab}
-.terminal{background:#0f0f14;border-radius:6px;border:1px solid #1f2130;padding:12px;font-family:'Consolas','Cascadia Code','Fira Code',monospace;font-size:13px;white-space:pre-wrap;word-break:break-all;height:400px;overflow-y:auto;line-height:1.5}
-.cmd-row{display:flex;gap:8px;margin-top:8px}
-.cmd-row input{flex:1;padding:8px 12px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:13px;outline:none}
-.cmd-row input:focus{border-color:#3b4261}
-.cmd-row button{padding:8px 16px;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600}
+
+/* ═══ 终端 ═══ */
+#xterm-container .xterm{padding:4px}
+#xterm-container .xterm-viewport{scrollbar-width:thin;background:#0f0f14!important}
+#xterm-container .xterm-rows{font-variant-ligatures:none}
+.btn-ctrl{padding:6px 14px;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600}
 .btn-run{background:#7aa2f7;color:#1a1b26}
 .btn-run:hover{background:#89b4fa}
 .btn-stop{background:#f7768e;color:#1a1b26}
 .btn-stop:hover{background:#ff9eab}
+
+/* ═══ 控制面板 ═══ */
 .control-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:800px}
+@media(max-width:768px){.control-grid{grid-template-columns:1fr}}
 .control-card{background:#16171e;border:1px solid #1f2130;border-radius:6px;padding:16px}
 .control-card h3{font-size:14px;color:#c0caf5;margin-bottom:12px}
 .control-card label{display:block;font-size:12px;color:#565f89;margin-bottom:4px}
@@ -62,311 +175,807 @@ tr:hover td{background:#1f2130}
 .control-card button:hover{background:#565f89}
 .control-card button.primary{background:#7aa2f7;color:#1a1b26}
 .control-card button.primary:hover{background:#89b4fa}
+
+/* ═══ 按键记录 ═══ */
 .keylog-box{background:#0f0f14;border:1px solid #1f2130;border-radius:6px;padding:12px;font-family:'Consolas',monospace;font-size:13px;height:400px;overflow-y:auto;line-height:1.6}
 .keylog-box .entry{display:flex;gap:8px;padding:2px 0}
 .keylog-box .time{color:#565f89;white-space:nowrap}
 .keylog-box .key{color:#c0caf5}
 .keylog-box .key.special{color:#f7768e;font-style:italic}
-#xterm-container .xterm{padding:4px}
-#xterm-container .xterm-viewport{scrollbar-width:thin}
-#xterm-container .xterm-rows{font-variant-ligatures:none}
+
+/* ═══ 设置 ═══ */
+.settings-form{max-width:600px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:13px;color:#565f89;margin-bottom:6px}
+.form-group input,.form-group select{width:100%;padding:8px 12px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:14px}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:#7aa2f7}
+.form-group .hint{font-size:11px;color:#565f89;margin-top:4px}
+.form-row{display:flex;gap:12px}
+.form-row .form-group{flex:1}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #1f2130}
+.toggle-row .toggle-label{font-size:14px;color:#c0caf5}
+.toggle-row .toggle-hint{font-size:12px;color:#565f89}
+.toggle{width:44px;height:24px;border-radius:12px;background:#3b4261;cursor:pointer;position:relative;transition:background .2s;border:none}
+.toggle.on{background:#7aa2f7}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#c0caf5;top:3px;left:3px;transition:transform .2s}
+.toggle.on::after{transform:translateX(20px)}
+.auth-row{display:flex;gap:8px;align-items:center}
+.auth-row input{flex:1}
+.auth-row button{padding:8px 14px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap}
+.auth-row button:hover{background:#2f3044}
+.btn-save{padding:10px 32px;border:none;border-radius:4px;background:#7aa2f7;color:#1a1b26;cursor:pointer;font-size:14px;font-weight:600;margin-top:8px}
+.btn-save:hover{background:#89b4fa}
+
+/* ═══ Toast 通知 ═══ */
+.toast-container{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:12px 20px;border-radius:6px;font-size:13px;pointer-events:auto;animation:toastIn .3s ease;max-width:360px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.toast.out{animation:toastOut .3s ease forwards}
+.toast.online{background:#1e2e1e;border:1px solid #2d4a2d;color:#9ece6a}
+.toast.offline{background:#2e1e1e;border:1px solid #4a2d2d;color:#f7768e}
+.toast.alert{background:#2e2a1e;border:1px solid #4a3d2d;color:#e0af68}
+.toast .toast-icon{font-size:16px}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(40px)}}
+
+/* ═══ 响应式 ═══ */
 @media(max-width:768px){
-.sidebar{width:140px;min-width:140px}
-.control-grid{grid-template-columns:1fr}
+.sidebar{width:160px;min-width:160px}
+.sidebar-header h1{font-size:15px}
+.stat-cards{grid-template-columns:1fr 1fr}
+.res-monitor{grid-template-columns:1fr}
+.detail-info{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+.sidebar{width:50px;min-width:50px}
+.sidebar-header h1,.sidebar-header p,.sidebar nav a .label{display:none}
+.sidebar nav a{justify-content:center;padding:10px}
+.sidebar nav a .icon{margin:0}
 }
 </style>
 </head>
 <body>
 
+<!-- ═══ 侧边栏 ═══ -->
 <div class="sidebar">
-  <h1>WinConsole</h1>
-  <nav>
-    <a class="active" data-panel="screenshot" onclick="switchPanel('screenshot')">屏幕</a>
-    <a data-panel="processes" onclick="switchPanel('processes')">进程</a>
-    <a data-panel="terminal" onclick="switchPanel('terminal')">终端</a>
-    <a data-panel="mouse" onclick="switchPanel('mouse')">鼠标</a>
-    <a data-panel="keyboard" onclick="switchPanel('keyboard')">键盘</a>
-    <a data-panel="keylog" onclick="switchPanel('keylog')">按键 <span class="badge" id="keylog-badge">0</span></a>
+  <div class="sidebar-header">
+    <h1>WinConsole</h1>
+    <p>远程控制面板</p>
+  </div>
+  <nav id="sidebar-nav">
+    <a class="active" data-page="dashboard" onclick="navigateTo('dashboard')">
+      <span class="icon">📊</span><span class="label">仪表盘</span>
+    </a>
+    <a data-page="devices" onclick="navigateTo('devices')">
+      <span class="icon">💻</span><span class="label">设备管理</span>
+    </a>
+    <!-- 设备详情链接，JS 动态插入 -->
+    <div class="sep"></div>
+    <a data-page="settings" onclick="navigateTo('settings')">
+      <span class="icon">⚙️</span><span class="label">设置</span>
+    </a>
   </nav>
 </div>
 
+<!-- ═══ 主内容区 ═══ -->
 <div class="main">
 
-<!-- ═══ 屏幕截图 ═══ -->
-<div id="panel-screenshot" class="panel active">
-  <h2>屏幕截图</h2>
-  <div class="toolbar">
-    <button onclick="triggerScreenshot()">立即截屏</button>
-    <label><input type="checkbox" id="ss-auto" checked onchange="toggleAutoRefresh()"> 自动</label>
-    <label>间隔 <input type="number" id="ss-interval" value="3" min="1" onchange="updateInterval()"> 秒</label>
-    <span id="ss-status" style="font-size:12px;color:#565f89"></span>
+<!-- ═══════════════ 仪表盘页面 ═══════════════ -->
+<div id="page-dashboard" class="page active">
+  <h2>仪表盘</h2>
+  <div class="stat-cards">
+    <div class="stat-card total">
+      <div class="icon">💻</div>
+      <div class="info"><div class="value" id="stat-total">0</div><div class="label">设备总数</div></div>
+    </div>
+    <div class="stat-card online">
+      <div class="icon">🟢</div>
+      <div class="info"><div class="value" id="stat-online">0</div><div class="label">在线设备</div></div>
+    </div>
+    <div class="stat-card offline">
+      <div class="icon">🔴</div>
+      <div class="info"><div class="value" id="stat-offline">0</div><div class="label">离线设备</div></div>
+    </div>
+    <div class="stat-card alert">
+      <div class="icon">⚠️</div>
+      <div class="info"><div class="value" id="stat-alerts">0</div><div class="label">异常警报</div></div>
+    </div>
   </div>
-  <div class="screenshot-wrap">
-    <img id="screenshot-img" src="/api/screenshot" alt="截图">
+  <div class="alert-section">
+    <h3>最近警报</h3>
+    <div class="alert-list" id="alert-list">
+      <div class="alert-empty">暂无警报</div>
+    </div>
   </div>
 </div>
 
-<!-- ═══ 进程列表 ═══ -->
-<div id="panel-processes" class="panel">
-  <h2>进程列表</h2>
-  <div class="toolbar">
-    <button onclick="refreshProcesses()">刷新</button>
-    <label>排序 <select id="proc-sort" onchange="refreshProcesses()">
-      <option value="cpu">CPU</option>
-      <option value="memory">内存</option>
-      <option value="name">名称</option>
-      <option value="pid">PID</option>
-    </select></label>
-    <input type="text" id="proc-search" placeholder="搜索进程..." oninput="filterProcesses()" style="padding:6px 12px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:13px;width:200px">
+<!-- ═══════════════ 设备管理页面 ═══════════════ -->
+<div id="page-devices" class="page">
+  <h2>设备管理</h2>
+  <div class="filter-bar">
+    <select id="filter-status" onchange="loadDevices()">
+      <option value="">全部状态</option>
+      <option value="online">在线</option>
+      <option value="offline">离线</option>
+    </select>
+    <select id="filter-group" onchange="loadDevices()">
+      <option value="">全部分组</option>
+    </select>
+    <input type="text" id="filter-search" placeholder="搜索设备名/IP..." oninput="loadDevices()">
+    <button onclick="loadDevices()">刷新</button>
   </div>
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
+          <th>设备名</th><th>IP</th><th>操作系统</th><th>分组</th><th>备注</th><th>状态</th><th>最后在线</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="device-tbody"></tbody>
+    </table>
+  </div>
+  <div class="group-section">
+    <h3>分组管理</h3>
+    <div class="group-cards" id="group-cards"></div>
+    <div class="group-add">
+      <input type="text" id="new-group-name" placeholder="新分组名称">
+      <button onclick="createGroup()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ 设备详情页面 ═══════════════ -->
+<div id="page-detail" class="page">
+  <div class="detail-header">
+    <button class="btn-back" onclick="navigateTo('devices')">← 返回</button>
+    <h2 id="detail-title">设备详情</h2>
+  </div>
+
+  <!-- 设备信息 -->
+  <div class="detail-info" id="detail-info"></div>
+
+  <!-- 资源监控 -->
+  <div class="res-monitor">
+    <div class="res-item">
+      <h3>CPU 使用率</h3>
+      <div class="res-value" id="cpu-value">--</div>
+      <div class="progress-bar"><div class="progress-fill cpu" id="cpu-bar" style="width:0%"></div></div>
+    </div>
+    <div class="res-item">
+      <h3>内存使用率</h3>
+      <div class="res-value mem" id="mem-value">--</div>
+      <div class="progress-bar"><div class="progress-fill mem" id="mem-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- 远程控制标签页 -->
+  <div class="tab-bar" id="remote-tabs">
+    <a class="active" data-tab="screenshot" onclick="switchTab('screenshot')">屏幕</a>
+    <a data-tab="processes" onclick="switchTab('processes')">进程</a>
+    <a data-tab="terminal" onclick="switchTab('terminal')">终端</a>
+    <a data-tab="mouse" onclick="switchTab('mouse')">鼠标</a>
+    <a data-tab="keyboard" onclick="switchTab('keyboard')">键盘</a>
+    <a data-tab="keylog" onclick="switchTab('keylog')">按键记录</a>
+  </div>
+
+  <!-- 截图 -->
+  <div id="tab-screenshot" class="tab-panel active">
+    <div class="toolbar">
+      <button onclick="triggerScreenshot()">立即截屏</button>
+      <label><input type="checkbox" id="ss-auto" checked onchange="toggleAutoRefresh()"> 自动刷新</label>
+      <label>间隔 <input type="number" id="ss-interval" value="3" min="1" onchange="setupScreenshotTimer()"> 秒</label>
+      <span id="ss-status" style="font-size:12px;color:#565f89"></span>
+    </div>
+    <div class="screenshot-wrap">
+      <img id="screenshot-img" alt="截图" style="display:none">
+      <span id="ss-placeholder" style="color:#565f89">点击"立即截屏"获取屏幕</span>
+    </div>
+  </div>
+
+  <!-- 进程 -->
+  <div id="tab-processes" class="tab-panel">
+    <div class="toolbar">
+      <button onclick="refreshProcesses()">刷新</button>
+      <label>排序 <select id="proc-sort" onchange="refreshProcesses()">
+        <option value="cpu">CPU</option><option value="memory">内存</option>
+        <option value="name">名称</option><option value="pid">PID</option>
+      </select></label>
+      <input type="text" class="proc-search" id="proc-search" placeholder="搜索进程..." oninput="renderProcesses()">
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
           <th onclick="sortProcesses('pid')">PID</th>
           <th onclick="sortProcesses('name')">名称</th>
           <th onclick="sortProcesses('cpu')">CPU %</th>
           <th onclick="sortProcesses('memory')">内存 %</th>
-          <th>状态</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody id="proc-tbody"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- ═══ 终端 (xterm.js) ═══ -->
-<div id="panel-terminal" class="panel">
-  <h2>终端 <span style="font-size:12px;color:#565f89;font-weight:normal">cmd.exe</span></h2>
-  <div class="toolbar">
-    <button onclick="clearTerminal()">清屏</button>
-    <button onclick="sendCtrlC()" style="background:#f7768e">中断 (Ctrl+C)</button>
-    <span id="term-status" style="font-size:12px;color:#565f89">等待连接...</span>
-  </div>
-  <div id="xterm-container" style="height:calc(100vh - 200px);border-radius:6px;overflow:hidden;border:1px solid #1f2130"></div>
-</div>
-
-<!-- ═══ 鼠标控制 ═══ -->
-<div id="panel-mouse" class="panel">
-  <h2>鼠标控制</h2>
-  <div class="control-grid">
-    <div class="control-card">
-      <h3>移动 / 点击</h3>
-      <div class="row">
-        <label>X <input type="number" id="mouse-x" value="500"></label>
-        <label>Y <input type="number" id="mouse-y" value="500"></label>
-        <button onclick="getMousePos()" title="获取鼠标当前位置">获取</button>
-      </div>
-      <div class="row">
-        <select id="mouse-btn">
-          <option value="left">左键</option>
-          <option value="right">右键</option>
-          <option value="middle">中键</option>
-        </select>
-        <button onclick="mouseAction('move')">移动</button>
-        <button class="primary" onclick="mouseAction('click')">点击</button>
-        <button onclick="mouseAction('doubleClick')">双击</button>
-        <button onclick="mouseAction('rightClick')">右键</button>
-      </div>
-    </div>
-    <div class="control-card">
-      <h3>滚动</h3>
-      <div class="row">
-        <label>行数 <input type="number" id="scroll-clicks" value="-3" style="width:60px"></label>
-        <button onclick="mouseAction('scroll')">滚动</button>
-      </div>
-      <h3 style="margin-top:12px;font-size:14px">拖拽</h3>
-      <div class="row">
-        <label>目标 X <input type="number" id="drag-x" value="600"></label>
-        <label>目标 Y <input type="number" id="drag-y" value="600"></label>
-        <button onclick="mouseAction('drag')">拖拽</button>
-      </div>
+          <th>状态</th><th>操作</th>
+        </tr></thead>
+        <tbody id="proc-tbody"></tbody>
+      </table>
     </div>
   </div>
-</div>
 
-<!-- ═══ 键盘输入 ═══ -->
-<div id="panel-keyboard" class="panel">
-  <h2>键盘输入</h2>
-  <div class="control-grid">
-    <div class="control-card">
-      <h3>输入文本</h3>
-      <div class="row" style="flex-direction:column;align-items:stretch">
-        <textarea id="kb-text" rows="4" style="padding:8px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:13px;font-family:inherit;resize:vertical;width:100%" placeholder="要输入的文本..."></textarea>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <label style="font-size:12px;color:#565f89">延迟 <input type="number" id="kb-interval" value="0" step="0.01" style="width:60px"> 秒</label>
-          <button class="primary" onclick="kbType()">输入</button>
+  <!-- 终端 -->
+  <div id="tab-terminal" class="tab-panel">
+    <div class="toolbar">
+      <button class="btn-ctrl btn-run" onclick="clearTerminal()">清屏</button>
+      <button class="btn-ctrl btn-stop" onclick="sendCtrlC()">中断 (Ctrl+C)</button>
+      <span id="term-status" style="font-size:12px;color:#565f89">等待连接...</span>
+    </div>
+    <div id="xterm-container" style="height:calc(100vh - 360px);min-height:300px;border-radius:6px;overflow:hidden;border:1px solid #1f2130;background:#0f0f14"></div>
+  </div>
+
+  <!-- 鼠标 -->
+  <div id="tab-mouse" class="tab-panel">
+    <div class="control-grid">
+      <div class="control-card">
+        <h3>移动 / 点击</h3>
+        <div class="row">
+          <label>X <input type="number" id="mouse-x" value="500"></label>
+          <label>Y <input type="number" id="mouse-y" value="500"></label>
+          <button onclick="getMousePos()" title="获取鼠标当前位置">获取</button>
+        </div>
+        <div class="row">
+          <select id="mouse-btn">
+            <option value="left">左键</option><option value="right">右键</option><option value="middle">中键</option>
+          </select>
+          <button onclick="mouseAction('move')">移动</button>
+          <button class="primary" onclick="mouseAction('click')">点击</button>
+          <button onclick="mouseAction('doubleClick')">双击</button>
+          <button onclick="mouseAction('rightClick')">右键</button>
+        </div>
+      </div>
+      <div class="control-card">
+        <h3>滚动</h3>
+        <div class="row">
+          <label>行数 <input type="number" id="scroll-clicks" value="-3" style="width:60px"></label>
+          <button onclick="mouseAction('scroll')">滚动</button>
+        </div>
+        <h3 style="margin-top:12px;font-size:14px">拖拽</h3>
+        <div class="row">
+          <label>目标 X <input type="number" id="drag-x" value="600"></label>
+          <label>目标 Y <input type="number" id="drag-y" value="600"></label>
+          <button onclick="mouseAction('drag')">拖拽</button>
         </div>
       </div>
     </div>
-    <div class="control-card">
-      <h3>热键 / 单键</h3>
-      <div class="row">
-        <label>按键 <input type="text" id="kb-single" placeholder="如 enter, esc, a" style="width:120px"></label>
-        <button onclick="kbPress()">按下</button>
+  </div>
+
+  <!-- 键盘 -->
+  <div id="tab-keyboard" class="tab-panel">
+    <div class="control-grid">
+      <div class="control-card">
+        <h3>输入文本</h3>
+        <div class="row" style="flex-direction:column;align-items:stretch">
+          <textarea id="kb-text" rows="4" style="padding:8px;border:1px solid #2f3044;background:#1f2130;color:#c0caf5;border-radius:4px;font-size:13px;font-family:inherit;resize:vertical;width:100%" placeholder="要输入的文本..."></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <label style="font-size:12px;color:#565f89">延迟 <input type="number" id="kb-interval" value="0" step="0.01" style="width:60px"> 秒</label>
+            <button class="primary" onclick="kbType()">输入</button>
+          </div>
+        </div>
       </div>
-      <div class="row">
-        <label>组合键 <input type="text" id="kb-combo" placeholder="如 ctrl+c, alt+tab" style="width:160px"></label>
-        <button onclick="kbHotkey()">发送</button>
+      <div class="control-card">
+        <h3>热键 / 单键</h3>
+        <div class="row">
+          <label>按键 <input type="text" id="kb-single" placeholder="如 enter, esc, a" style="width:120px"></label>
+          <button onclick="kbPress()">按下</button>
+        </div>
+        <div class="row">
+          <label>组合键 <input type="text" id="kb-combo" placeholder="如 ctrl+c, alt+tab" style="width:160px"></label>
+          <button onclick="kbHotkey()">发送</button>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- 按键记录 -->
+  <div id="tab-keylog" class="tab-panel">
+    <div class="toolbar">
+      <button onclick="clearKeylog()">清空</button>
+      <label><input type="checkbox" id="kl-auto" checked> 自动滚动</label>
+      <span style="font-size:12px;color:#565f89" id="kl-count"></span>
+    </div>
+    <div class="keylog-box" id="keylog-box"></div>
+  </div>
 </div>
 
-<!-- ═══ 按键记录 ═══ -->
-<div id="panel-keylog" class="panel">
-  <h2>按键记录</h2>
-  <div class="toolbar">
-    <button onclick="clearKeylog()">清空</button>
-    <label><input type="checkbox" id="kl-auto" checked> 自动滚动</label>
-    <span style="font-size:12px;color:#565f89" id="kl-count"></span>
+<!-- ═══════════════ 设置页面 ═══════════════ -->
+<div id="page-settings" class="page">
+  <h2>设置</h2>
+  <div class="settings-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label>HTTP 监听端口</label>
+        <input type="number" id="set-port">
+      </div>
+      <div class="form-group">
+        <label>客户端 WS 端口</label>
+        <input type="number" id="set-ws-port">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>心跳间隔（秒）</label>
+        <input type="number" id="set-heartbeat-interval">
+      </div>
+      <div class="form-group">
+        <label>心跳超时（秒）</label>
+        <input type="number" id="set-heartbeat-timeout">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>认证密钥</label>
+      <div class="auth-row">
+        <input type="password" id="set-auth-key" placeholder="未设置">
+        <button onclick="toggleAuthVisibility()">显示</button>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">启用 TLS</div><div class="toggle-hint">使用 HTTPS 加密通信</div></div>
+      <button class="toggle" id="set-tls" onclick="toggleSwitch(this)"></button>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">上下线通知</div><div class="toggle-hint">设备上线/离线时弹出通知</div></div>
+      <button class="toggle" id="set-notification" onclick="toggleSwitch(this)"></button>
+    </div>
+    <button class="btn-save" onclick="saveSettings()">保存设置</button>
   </div>
-  <div class="keylog-box" id="keylog-box"></div>
 </div>
 
 </div><!-- /main -->
 
+<!-- Toast 容器 -->
+<div class="toast-container" id="toast-container"></div>
+
 <script>
-let currentPanel = 'screenshot';
-function switchPanel(name) {
-  currentPanel = name;
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
-  document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
-  document.querySelector(`.sidebar nav a[data-panel="${name}"]`).classList.add('active');
-  if (name === 'processes') refreshProcesses();
-  if (name === 'keylog') refreshKeylog();
+// ═══════════════════════════════════════════════
+// 全局状态
+// ═══════════════════════════════════════════════
+let currentPage = 'dashboard';
+let currentDeviceId = null;   // 当前查看的设备 ID
+let currentTab = 'screenshot'; // 当前远程控制标签页
+let procData = [];            // 进程列表缓存
+let klAutoScroll = true;      // 按键记录自动滚动
+
+// 终端相关
+let ws = null, xterm = null, fitAddon = null;
+
+// 按键记录 WebSocket
+let klWs = null, klReconnectTimer = null;
+
+// 截图自动刷新
+let ssAutoRefresh = true, ssTimer = null;
+
+// 系统信息刷新
+let sysInfoTimer = null;
+
+// 仪表盘刷新
+let dashboardTimer = null;
+
+// ═══════════════════════════════════════════════
+// 页面导航
+// ═══════════════════════════════════════════════
+function navigateTo(page, deviceId) {
+  // 如果切换到设备详情
+  if (page === 'detail' && deviceId) {
+    currentDeviceId = deviceId;
+    loadDeviceDetail(deviceId);
+    addDeviceNavLink(deviceId);
+  }
+  currentPage = page;
+  // 切换页面显示
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const el = document.getElementById('page-' + page);
+  if (el) el.classList.add('active');
+  // 更新侧边栏激活状态
+  document.querySelectorAll('#sidebar-nav > a').forEach(a => a.classList.remove('active'));
+  const navEl = document.querySelector(`#sidebar-nav a[data-page="${page}"]`);
+  if (navEl) navEl.classList.add('active');
+  // 页面初始化
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'devices') { loadDevices(); loadGroups(); }
+  // 清理不相关的资源
+  if (page !== 'detail') {
+    cleanupRemoteResources();
+    removeDeviceNavLink();
+    currentDeviceId = null;
+  }
 }
 
-// ── 截图 ──
-let ssAutoRefresh = true;
-let ssTimer = null;
+// 在侧边栏添加设备详情导航链接
+function addDeviceNavLink(deviceId) {
+  removeDeviceNavLink();
+  const nav = document.getElementById('sidebar-nav');
+  const sep = nav.querySelector('.sep');
+  const link = document.createElement('a');
+  link.className = 'active device-link';
+  link.setAttribute('data-page', 'detail');
+  link.setAttribute('data-device', deviceId);
+  link.onclick = () => navigateTo('detail', deviceId);
+  // 获取设备名（异步更新）
+  let name = deviceId.substring(0, 8);
+  link.innerHTML = `<span class="icon">🖥️</span><span class="label">设备: ${esc(name)}…</span>`;
+  nav.insertBefore(link, sep);
+  // 异步获取设备名
+  fetch('/api/devices/' + deviceId).then(r => r.json()).then(d => {
+    if (d.hostname) {
+      link.querySelector('.label').textContent = d.hostname;
+    }
+  }).catch(() => {});
+  // 取消其他导航的 active
+  document.querySelectorAll('#sidebar-nav > a:not(.device-link)').forEach(a => a.classList.remove('active'));
+}
 
-function updateScreenshot() {
-  const img = document.getElementById('screenshot-img');
-  img.src = '/api/screenshot?' + Date.now();
+function removeDeviceNavLink() {
+  const el = document.querySelector('#sidebar-nav a.device-link');
+  if (el) el.remove();
 }
-function triggerScreenshot() {
-  const img = document.getElementById('screenshot-img');
-  img.src = '/api/screenshot?trigger=1&' + Date.now();
-  document.getElementById('ss-status').textContent = '已截屏 ' + new Date().toLocaleTimeString();
+
+// 清理远程控制资源（WebSocket、定时器）
+function cleanupRemoteResources() {
+  if (ssTimer) { clearInterval(ssTimer); ssTimer = null; }
+  if (sysInfoTimer) { clearInterval(sysInfoTimer); sysInfoTimer = null; }
+  if (ws) { try { ws.close(); } catch(e) {} ws = null; }
+  if (klWs) { try { klWs.close(); } catch(e) {} klWs = null; }
+  if (klReconnectTimer) { clearTimeout(klReconnectTimer); klReconnectTimer = null; }
 }
+
+// ═══════════════════════════════════════════════
+// 仪表盘
+// ═══════════════════════════════════════════════
+async function loadDashboard() {
+  try {
+    const r = await fetch('/api/dashboard');
+    const d = await r.json();
+    const s = d.stats || {};
+    document.getElementById('stat-total').textContent = s.total || 0;
+    document.getElementById('stat-online').textContent = s.online || 0;
+    document.getElementById('stat-offline').textContent = s.offline || 0;
+    document.getElementById('stat-alerts').textContent = s.alerts || 0;
+    // 渲染警报列表
+    const alerts = d.alerts || [];
+    const listEl = document.getElementById('alert-list');
+    if (alerts.length === 0) {
+      listEl.innerHTML = '<div class="alert-empty">暂无警报</div>';
+    } else {
+      listEl.innerHTML = alerts.map(a => {
+        const dotClass = a.level === 'error' ? 'error' : 'warn';
+        const time = a.time ? a.time.slice(11, 19) : '--:--:--';
+        return `<div class="alert-item">
+          <span class="alert-dot ${dotClass}"></span>
+          <span class="alert-time">${esc(time)}</span>
+          <span class="alert-device">${esc(a.device || a.hostname || '')}</span>
+          <span class="alert-type">${esc(a.type || a.message || '')}</span>
+        </div>`;
+      }).join('');
+    }
+  } catch(e) {
+    console.error('仪表盘加载失败:', e);
+  }
+}
+
+// 仪表盘自动刷新
+function startDashboardTimer() {
+  if (dashboardTimer) clearInterval(dashboardTimer);
+  dashboardTimer = setInterval(() => {
+    if (currentPage === 'dashboard') loadDashboard();
+  }, 5000);
+}
+
+// ═══════════════════════════════════════════════
+// 设备管理
+// ═══════════════════════════════════════════════
+async function loadDevices() {
+  const status = document.getElementById('filter-status').value;
+  const group = document.getElementById('filter-group').value;
+  const search = document.getElementById('filter-search').value;
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (group) params.set('group', group);
+  if (search) params.set('search', search);
+  try {
+    const r = await fetch('/api/devices?' + params.toString());
+    const devices = await r.json();
+    const tbody = document.getElementById('device-tbody');
+    if (!devices.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#565f89">暂无设备</td></tr>';
+    } else {
+      tbody.innerHTML = devices.map(d => `<tr>
+        <td>${esc(d.hostname || '')}</td>
+        <td>${esc(d.ip || '')}</td>
+        <td>${esc(d.os_name || '')}</td>
+        <td>${esc(d.group || '-')}</td>
+        <td class="remark-cell" onclick="editRemark('${d.client_id}','${esc(d.remark || '')}')">${esc(d.remark || '-')}</td>
+        <td><span class="status-dot ${d.online ? 'on' : 'off'}"></span>${d.online ? '在线' : '离线'}</td>
+        <td>${esc(d.last_online_at || '-')}</td>
+        <td>
+          <button class="btn-sm btn-detail" onclick="navigateTo('detail','${d.client_id}')">详情</button>
+          <button class="btn-sm btn-group" onclick="setDeviceGroup('${d.client_id}','${esc(d.group || '')}')">分组</button>
+          <button class="btn-sm btn-del" onclick="deleteDevice('${d.client_id}','${esc(d.hostname || '')}')">删除</button>
+        </td>
+      </tr>`).join('');
+    }
+  } catch(e) {
+    console.error('设备列表加载失败:', e);
+  }
+}
+
+async function deleteDevice(id, name) {
+  if (!confirm('确定删除设备 "' + name + '"？')) return;
+  try {
+    await fetch('/api/devices/' + id, { method: 'DELETE' });
+    loadDevices();
+  } catch(e) { alert('删除失败：' + e); }
+}
+
+async function editRemark(id, current) {
+  const remark = prompt('编辑备注：', current === '-' ? '' : current);
+  if (remark === null) return;
+  try {
+    await fetch('/api/devices/' + id + '/remark', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({remark})
+    });
+    loadDevices();
+  } catch(e) { alert('备注保存失败：' + e); }
+}
+
+// ═══════════════════════════════════════════════
+// 分组管理
+// ═══════════════════════════════════════════════
+async function loadGroups() {
+  try {
+    const r = await fetch('/api/groups');
+    const groups = await r.json();
+    // 更新分组卡片
+    const cards = document.getElementById('group-cards');
+    cards.innerHTML = (groups || []).map(g => `<div class="group-card">
+      <span class="g-name">${esc(g)}</span>
+      <button class="g-edit" onclick="renameGroup('${esc(g)}')" title="重命名">✏️</button>
+      <button class="g-del" onclick="deleteGroup('${esc(g)}')" title="删除">✕</button>
+    </div>`).join('');
+    // 更新筛选下拉框
+    const sel = document.getElementById('filter-group');
+    const val = sel.value;
+    sel.innerHTML = '<option value="">全部分组</option>' + (groups || []).map(g =>
+      `<option value="${esc(g)}">${esc(g)}</option>`
+    ).join('');
+    sel.value = val;
+  } catch(e) {
+    console.error('分组加载失败:', e);
+  }
+}
+
+async function createGroup() {
+  const input = document.getElementById('new-group-name');
+  const name = input.value.trim();
+  if (!name) return;
+  try {
+    const r = await fetch('/api/groups', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name})
+    });
+    if (r.ok) { input.value = ''; loadGroups(); }
+    else { const d = await r.json(); alert(d.error || '创建失败'); }
+  } catch(e) { alert('创建失败：' + e); }
+}
+
+async function renameGroup(oldName) {
+  const newName = prompt('重命名分组 "' + oldName + '"：', oldName);
+  if (!newName || newName === oldName) return;
+  try {
+    const r = await fetch('/api/groups/' + encodeURIComponent(oldName), {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({new_name: newName})
+    });
+    if (r.ok) loadGroups();
+    else { const d = await r.json(); alert(d.error || '重命名失败'); }
+  } catch(e) { alert('重命名失败：' + e); }
+}
+
+async function deleteGroup(name) {
+  if (!confirm('确定删除分组 "' + name + '"？分组内设备的分组字段将被清除。')) return;
+  try {
+    const r = await fetch('/api/groups/' + encodeURIComponent(name), { method: 'DELETE' });
+    if (r.ok) loadGroups();
+    else { const d = await r.json(); alert(d.error || '删除失败'); }
+  } catch(e) { alert('删除失败：' + e); }
+}
+
+// ═══════════════════════════════════════════════
+// 设备详情
+// ═══════════════════════════════════════════════
+async function loadDeviceDetail(deviceId) {
+  try {
+    const r = await fetch('/api/devices/' + deviceId);
+    const d = await r.json();
+    if (d.error) { alert(d.error); navigateTo('devices'); return; }
+    document.getElementById('detail-title').innerHTML = esc(d.hostname || deviceId) +
+      '<span class="sub">' + (d.online ? '🟢 在线' : '🔴 离线') + '</span>';
+    // 信息卡片
+    document.getElementById('detail-info').innerHTML = `
+      <div class="info-card">
+        <h3>基本信息</h3>
+        <div class="info-row"><span class="info-label">主机名</span><span class="info-value">${esc(d.hostname || '-')}</span></div>
+        <div class="info-row"><span class="info-label">IP 地址</span><span class="info-value">${esc(d.ip || '-')}</span></div>
+        <div class="info-row"><span class="info-label">操作系统</span><span class="info-value">${esc(d.os_name || '-')}</span></div>
+        <div class="info-row"><span class="info-label">系统版本</span><span class="info-value">${esc(d.os_version || '-')}</span></div>
+        <div class="info-row"><span class="info-label">架构</span><span class="info-value">${esc(d.arch || '-')}</span></div>
+      </div>
+      <div class="info-card">
+        <h3>连接信息</h3>
+        <div class="info-row"><span class="info-label">分组</span><span class="info-value" style="cursor:pointer" onclick="setDeviceGroup('${d.client_id}','${esc(d.group || '')}');loadDeviceInfo('${d.client_id}')">${esc(d.group || '-')}</span></div>
+        <div class="info-row"><span class="info-label">备注</span><span class="info-value" style="cursor:pointer" onclick="editRemark('${d.client_id}','${esc(d.remark || '')}');loadDeviceInfo('${d.client_id}')">${esc(d.remark || '-')}</span></div>
+        <div class="info-row"><span class="info-label">在线状态</span><span class="info-value"><span class="status-dot ${d.online?'on':'off'}"></span>${d.online?'在线':'离线'}</span></div>
+        <div class="info-row"><span class="info-label">连接时间</span><span class="info-value">${esc(d.connected_at || '-')}</span></div>
+        <div class="info-row"><span class="info-label">最后在线</span><span class="info-value">${esc(d.last_online_at || '-')}</span></div>
+      </div>`;
+  } catch(e) {
+    console.error('设备详情加载失败:', e);
+  }
+  // 启动系统信息定时器（每秒刷新）
+  if (sysInfoTimer) clearInterval(sysInfoTimer);
+  fetchSystemInfo(); // 立即获取一次
+  sysInfoTimer = setInterval(fetchSystemInfo, 1000);
+  // 初始化远程控制标签页到截图
+  switchTab('screenshot');
+}
+
+// 获取系统信息并更新UI
+async function fetchSystemInfo() {
+  if (!currentDeviceId) return;
+  try {
+    const r = await fetch('/api/devices/' + currentDeviceId + '/system-info');
+    const d = await r.json();
+    if (d.error) {
+      // 设备离线或错误，显示 --
+      document.getElementById('cpu-value').textContent = '--';
+      document.getElementById('cpu-bar').style.width = '0%';
+      document.getElementById('mem-value').textContent = '--';
+      document.getElementById('mem-bar').style.width = '0%';
+      return;
+    }
+    // 更新CPU
+    const cpu = d.cpu_percent || 0;
+    document.getElementById('cpu-value').textContent = cpu.toFixed(1) + '%';
+    document.getElementById('cpu-bar').style.width = cpu + '%';
+    // 更新内存
+    const mem = d.mem_percent || 0;
+    document.getElementById('mem-value').textContent = mem.toFixed(1) + '%';
+    document.getElementById('mem-bar').style.width = mem + '%';
+  } catch(e) {
+    console.error('获取系统信息失败:', e);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// 远程控制标签页切换
+// ═══════════════════════════════════════════════
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('#remote-tabs a').forEach(a => a.classList.remove('active'));
+  document.querySelector(`#remote-tabs a[data-tab="${tab}"]`).classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  // 标签页初始化
+  if (tab === 'screenshot') setupScreenshotTimer();
+  else { if (ssTimer) { clearInterval(ssTimer); ssTimer = null; } }
+  if (tab === 'processes') refreshProcesses();
+  if (tab === 'terminal') initTerminal();
+  if (tab === 'keylog') connectKeylogWs();
+}
+
+// ═══════════════════════════════════════════════
+// 截图功能
+// ═══════════════════════════════════════════════
+async function triggerScreenshot() {
+  if (!currentDeviceId) return;
+  try {
+    document.getElementById('ss-status').textContent = '截屏中...';
+    const r = await fetch('/api/devices/' + currentDeviceId + '/screenshot', { method: 'POST' });
+    const d = await r.json();
+    if (d.data_b64) {
+      const img = document.getElementById('screenshot-img');
+      img.src = 'data:image/jpeg;base64,' + d.data_b64;
+      img.style.display = 'block';
+      document.getElementById('ss-placeholder').style.display = 'none';
+      document.getElementById('ss-status').textContent = '已截屏 ' + new Date().toLocaleTimeString();
+    } else {
+      document.getElementById('ss-status').textContent = d.error || '截图失败';
+    }
+  } catch(e) {
+    document.getElementById('ss-status').textContent = '错误：' + e;
+  }
+}
+
 function toggleAutoRefresh() {
   ssAutoRefresh = document.getElementById('ss-auto').checked;
   setupScreenshotTimer();
 }
+
 function setupScreenshotTimer() {
   if (ssTimer) { clearInterval(ssTimer); ssTimer = null; }
-  if (ssAutoRefresh) {
-    ssTimer = setInterval(updateScreenshot, parseInt(document.getElementById('ss-interval').value) * 1000);
+  if (ssAutoRefresh && currentTab === 'screenshot' && currentDeviceId) {
+    const sec = parseInt(document.getElementById('ss-interval').value) || 3;
+    ssTimer = setInterval(triggerScreenshot, sec * 1000);
   }
 }
-function updateInterval() {
-  if (ssAutoRefresh) setupScreenshotTimer();
-  fetch('/api/screenshot/config', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({interval: parseInt(document.getElementById('ss-interval').value)})
-  });
-}
-setupScreenshotTimer();
 
-// ── 进程 ──
-let procData = [];
+// ═══════════════════════════════════════════════
+// 进程列表
+// ═══════════════════════════════════════════════
 async function refreshProcesses() {
+  if (!currentDeviceId) return;
   const sort = document.getElementById('proc-sort').value;
   try {
-    const r = await fetch('/api/processes?sort='+sort+'&limit=200');
+    const r = await fetch('/api/devices/' + currentDeviceId + '/processes?sort=' + sort + '&limit=200');
     const d = await r.json();
     procData = d.processes || [];
   } catch(e) { procData = []; }
   renderProcesses();
 }
+
 function renderProcesses() {
   const q = document.getElementById('proc-search').value.toLowerCase();
-  const filtered = q ? procData.filter(p => (p.name||'').toLowerCase().includes(q) || String(p.pid).includes(q)) : procData;
+  const filtered = q ? procData.filter(p =>
+    (p.name||'').toLowerCase().includes(q) || String(p.pid).includes(q)
+  ) : procData;
   document.getElementById('proc-tbody').innerHTML = filtered.map(p => `<tr>
     <td>${p.pid}</td>
     <td>${esc(p.name||'')}</td>
-    <td>${p.cpu_percent.toFixed(1)}</td>
-    <td>${p.memory_percent.toFixed(1)}</td>
-    <td>${p.status||''}</td>
+    <td>${(p.cpu_percent||0).toFixed(1)}</td>
+    <td>${(p.memory_percent||0).toFixed(1)}</td>
+    <td>${esc(p.status||'')}</td>
     <td><button class="btn-kill" onclick="killProc(${p.pid})">结束</button></td>
   </tr>`).join('');
 }
-function filterProcesses() { renderProcesses(); }
+
 function sortProcesses(col) {
   document.getElementById('proc-sort').value = col;
   refreshProcesses();
 }
+
 async function killProc(pid) {
+  if (!currentDeviceId) return;
   if (!confirm('确定结束进程 ' + pid + '？')) return;
   try {
-    await fetch('/api/processes/'+pid+'/kill', {method:'POST'});
+    await fetch('/api/devices/' + currentDeviceId + '/processes/' + pid + '/kill', { method: 'POST' });
     refreshProcesses();
-  } catch(e) { alert('失败：'+e); }
+  } catch(e) { alert('失败：' + e); }
 }
-setInterval(() => { if (currentPanel === 'processes') refreshProcesses(); }, 3000);
 
-// ── 终端 (xterm.js + WebSocket + local echo + 前端prompt) ──
-let ws = null;
-let xterm = null;
-let fitAddon = null;
-let currentPath = '';
-let inputBuffer = '';
-let promptStr = '>';
+// 进程自动刷新
+setInterval(() => {
+  if (currentPage === 'detail' && currentTab === 'processes') refreshProcesses();
+}, 3000);
 
-function updatePath(cmd) {
-  let arg = cmd.substring(2).trim();
-  // /d flag
-  if (arg.startsWith('/d ')) arg = arg.substring(3).trim();
-  // Strip quotes
-  if ((arg.startsWith('"') && arg.endsWith('"')) ||
-      (arg.startsWith("'") && arg.endsWith("'"))) arg = arg.slice(1, -1);
-  // No arg => report only, no change
-  if (!arg) return currentPath;
-  // Drive switch (D: or D:\path)
-  if (/^[A-Za-z]:/.test(arg)) {
-    if (arg.length === 2) arg += '\\';
-    return arg;
+// ═══════════════════════════════════════════════
+// 终端 (xterm.js + WebSocket)
+// ═══════════════════════════════════════════════
+let termInitialized = false;
+
+function initTerminal() {
+  if (!currentDeviceId) return;
+  // 如果已初始化，只重连
+  if (xterm && termInitialized) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) connectTerminalWs();
+    return;
   }
-  // Absolute from root of current drive
-  if (arg.startsWith('\\') || arg.startsWith('/')) {
-    arg = arg.replace(/\//g, '\\');
-    return currentPath.substring(0, 2) + arg;
-  }
-  // Relative
-  arg = arg.replace(/\//g, '\\');
-  const parts = currentPath.split('\\');
-  for (const p of arg.split('\\')) {
-    if (p === '..') { if (parts.length > 1) parts.pop(); }
-    else if (p !== '' && p !== '.') parts.push(p);
-  }
-  return parts.join('\\');
-}
-
-function fetchCwd() {
-  fetch('/api/terminal/cwd').then(r => r.json()).then(d => {
-    currentPath = d.cwd || '';
-    promptStr = currentPath ? currentPath + '>' : '>';
-  }).catch(() => {
-    promptStr = '>';
-  });
-}
-
-function showPrompt() {
-  xterm.write('\r\n' + promptStr);
-}
-
-function initXterm() {
+  termInitialized = true;
   const container = document.getElementById('xterm-container');
   if (!container) return;
+  // 清理旧实例
+  if (xterm) { xterm.dispose(); xterm = null; }
   xterm = new Terminal({
     cursorBlink: true,
     cursorStyle: 'block',
     fontSize: 14,
     fontFamily: 'Consolas, "Cascadia Code", "Fira Code", monospace',
+    scrollback: 5000,
+    convertEol: false,
     theme: {
       background: '#0f0f14', foreground: '#c0caf5', cursor: '#7aa2f7',
       selectionBackground: '#3b4261',
@@ -380,76 +989,53 @@ function initXterm() {
   fitAddon = new FitAddon.FitAddon();
   xterm.loadAddon(fitAddon);
   xterm.open(container);
-  fitAddon.fit();
-  const ro = new ResizeObserver(() => fitAddon.fit());
+  setTimeout(() => fitAddon.fit(), 50);
+  const ro = new ResizeObserver(() => { if (fitAddon) fitAddon.fit(); });
   ro.observe(container);
-  connectWs();
-  xterm.onKey(e => {
-    const ch = e.key;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    if (ch === '\r') {
-      const cmd = inputBuffer;
-      xterm.write('\r\n');
-      ws.send(inputBuffer + '\r');
-      inputBuffer = '';
-      // Update path for cd commands locally
-      if (/^cd\b/i.test(cmd.trim())) {
-        currentPath = updatePath(cmd);
-        promptStr = currentPath ? currentPath + '>' : '>';
-      }
-      // Fetch real CWD non-blocking (for edge cases)
-      setTimeout(fetchCwd, 100);
-      xterm.write(promptStr);
-    } else if (ch === '\x7f') {
-      if (inputBuffer.length > 0) {
-        inputBuffer = inputBuffer.slice(0, -1);
-        xterm.write('\b \b');
-      }
-    } else if (ch === '\x03') {
-      xterm.write('^C\r\n');
-      ws.send('\x03');
-      inputBuffer = '';
-      xterm.write(promptStr);
-    } else if (ch === '\x0c') {
-      xterm.clear();
-      xterm.write(promptStr);
-    } else if (ch.length === 1 && ch >= ' ') {
-      inputBuffer += ch;
-      xterm.write(ch);
+  // 键盘输入处理——直接转发按键到远程终端
+  xterm.onData(data => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(data);
     }
   });
+  connectTerminalWs();
 }
 
-function connectWs() {
+function connectTerminalWs() {
+  if (!currentDeviceId) return;
+  if (ws) { try { ws.close(); } catch(e) {} }
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${proto}//${location.host}/terminal/ws`);
+  ws = new WebSocket(`${proto}//${location.host}/api/devices/${currentDeviceId}/terminal/ws`);
   ws.onopen = () => {
     document.getElementById('term-status').textContent = '已连接';
-    fetchCwd();
-    setTimeout(showPrompt, 300);
+    xterm.focus();
   };
-  ws.onmessage = e => xterm.write(e.data);
+  ws.onmessage = e => {
+    if (xterm) xterm.write(e.data);
+  };
   ws.onclose = () => {
     document.getElementById('term-status').textContent = '已断开，重连中...';
-    inputBuffer = '';
-    setTimeout(connectWs, 1500);
+    xterm.writeln('\r\n\x1b[33m--- 连接已断开，1.5秒后自动重连 ---\x1b[0m');
+    setTimeout(() => {
+      if (currentPage === 'detail' && currentTab === 'terminal') connectTerminalWs();
+    }, 1500);
   };
-  ws.onerror = () => ws.close();
+  ws.onerror = () => { if (ws) ws.close(); };
 }
 
 function clearTerminal() {
-  if (xterm) { xterm.clear(); xterm.write(promptStr); }
+  if (xterm) xterm.clear();
 }
+
 function sendCtrlC() {
-  if (xterm) { xterm.write('^C\r\n'); }
   if (ws && ws.readyState === WebSocket.OPEN) ws.send('\x03');
-  if (xterm) xterm.write(promptStr);
 }
 
-initXterm();
-
-// ── 鼠标 ──
+// ═══════════════════════════════════════════════
+// 鼠标控制
+// ═══════════════════════════════════════════════
 async function mouseAction(action) {
+  if (!currentDeviceId) return;
   const data = {action};
   const x = parseInt(document.getElementById('mouse-x').value);
   const y = parseInt(document.getElementById('mouse-y').value);
@@ -462,48 +1048,86 @@ async function mouseAction(action) {
     if (!isNaN(dx) && !isNaN(dy)) { data.x = dx; data.y = dy; }
   }
   try {
-    const r = await fetch('/api/mouse', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
+    const r = await fetch('/api/devices/' + currentDeviceId + '/mouse', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+    });
     const d = await r.json();
     if (d.error) alert(d.error);
-  } catch(e) { alert('错误：'+e); }
+  } catch(e) { alert('错误：' + e); }
 }
+
 async function getMousePos() {
+  if (!currentDeviceId) return;
   try {
-    const r = await fetch('/api/mouse', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'getPos'})});
+    const r = await fetch('/api/devices/' + currentDeviceId + '/mouse', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action: 'getPos'})
+    });
     const d = await r.json();
-    if (d.x !== undefined) { document.getElementById('mouse-x').value = d.x; document.getElementById('mouse-y').value = d.y; }
+    if (d.x !== undefined) {
+      document.getElementById('mouse-x').value = d.x;
+      document.getElementById('mouse-y').value = d.y;
+    }
   } catch(e) {}
 }
 
-// ── 键盘 ──
+// ═══════════════════════════════════════════════
+// 键盘控制
+// ═══════════════════════════════════════════════
 async function kbType() {
+  if (!currentDeviceId) return;
   const text = document.getElementById('kb-text').value;
   if (!text) return;
   const interval = parseFloat(document.getElementById('kb-interval').value) || 0;
-  try { await fetch('/api/keyboard', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'type', text, interval})}); } catch(e) { alert('错误：'+e); }
+  try {
+    await fetch('/api/devices/' + currentDeviceId + '/keyboard', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action: 'type', text, interval})
+    });
+  } catch(e) { alert('错误：' + e); }
 }
+
 async function kbPress() {
+  if (!currentDeviceId) return;
   const key = document.getElementById('kb-single').value.trim();
   if (!key) return;
-  try { await fetch('/api/keyboard', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'press', key})}); } catch(e) { alert('错误：'+e); }
+  try {
+    await fetch('/api/devices/' + currentDeviceId + '/keyboard', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action: 'press', key})
+    });
+  } catch(e) { alert('错误：' + e); }
   document.getElementById('kb-single').value = '';
 }
+
 async function kbHotkey() {
+  if (!currentDeviceId) return;
   const combo = document.getElementById('kb-combo').value.trim();
   if (!combo) return;
-  const keys = combo.replace(/\s+/g,'').split('+');
-  try { await fetch('/api/keyboard', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'hotkey', keys})}); } catch(e) { alert('错误：'+e); }
+  const keys = combo.replace(/\s+/g, '').split('+');
+  try {
+    await fetch('/api/devices/' + currentDeviceId + '/keyboard', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action: 'hotkey', keys})
+    });
+  } catch(e) { alert('错误：' + e); }
   document.getElementById('kb-combo').value = '';
 }
 
-// ── 按键记录 (WebSocket) ──
-let klAutoScroll = true;
-let klWs = null;
-let klReconnectTimer = null;
-
-function connectKlWs() {
+// ═══════════════════════════════════════════════
+// 按键记录 (WebSocket)
+// ═══════════════════════════════════════════════
+function connectKeylogWs() {
+  if (!currentDeviceId) return;
+  // 先关闭旧连接
+  if (klWs) { try { klWs.close(); } catch(e) {} }
+  if (klReconnectTimer) { clearTimeout(klReconnectTimer); klReconnectTimer = null; }
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  klWs = new WebSocket(`${proto}//${location.host}/keylog/ws`);
+  klWs = new WebSocket(`${proto}//${location.host}/api/devices/${currentDeviceId}/keylog/ws`);
+  klWs.onopen = () => {
+    // 发送 start 指令
+    klWs.send(JSON.stringify({action: 'start'}));
+  };
   klWs.onmessage = e => {
     try {
       const entry = JSON.parse(e.data);
@@ -512,51 +1136,233 @@ function connectKlWs() {
   };
   klWs.onclose = () => {
     if (klReconnectTimer) clearTimeout(klReconnectTimer);
-    klReconnectTimer = setTimeout(connectKlWs, 3000);
+    klReconnectTimer = setTimeout(() => {
+      if (currentPage === 'detail' && currentTab === 'keylog') connectKeylogWs();
+    }, 3000);
   };
-  klWs.onerror = () => klWs.close();
+  klWs.onerror = () => { if (klWs) klWs.close(); };
 }
 
 function appendKeylogEntry(e) {
   const box = document.getElementById('keylog-box');
   const div = document.createElement('div');
   div.className = 'entry';
-  const isSpecial = e.key.startsWith('[');
-  div.innerHTML = `<span class="time">${e.time.slice(11,19)}</span><span class="key${isSpecial?' special':''}">${esc(e.key)}</span>`;
+  const isSpecial = e.key && e.key.startsWith('[');
+  const time = e.time ? e.time.slice(11, 19) : '--:--:--';
+  div.innerHTML = `<span class="time">${esc(time)}</span><span class="key${isSpecial ? ' special' : ''}">${esc(e.key || '')}</span>`;
   box.appendChild(div);
-  updateKeylogBadge();
+  updateKeylogCount();
   if (klAutoScroll) box.scrollTop = box.scrollHeight;
-}
-
-// Initial load via REST (existing entries)
-async function loadKeylogHistory() {
-  try {
-    const r = await fetch('/api/keylog');
-    const d = await r.json();
-    const entries = d.entries || [];
-    for (const e of entries) appendKeylogEntry(e);
-  } catch(_) {}
 }
 
 function clearKeylog() {
   document.getElementById('keylog-box').innerHTML = '';
-  document.getElementById('keylog-badge').textContent = '0';
   document.getElementById('kl-count').textContent = '';
-  fetch('/api/keylog/clear', {method:'POST'}).catch(()=>{});
 }
-function updateKeylogBadge() {
+
+function updateKeylogCount() {
   const count = document.getElementById('keylog-box').children.length;
-  document.getElementById('keylog-badge').textContent = count;
   document.getElementById('kl-count').textContent = count + ' 条记录';
 }
-document.getElementById('kl-auto').addEventListener('change', function() { klAutoScroll = this.checked; });
-connectKlWs();
-loadKeylogHistory();
 
+document.getElementById('kl-auto').addEventListener('change', function() {
+  klAutoScroll = this.checked;
+});
+
+// ═══════════════════════════════════════════════
+// 设置页面
+// ═══════════════════════════════════════════════
+async function loadSettings() {
+  try {
+    const r = await fetch('/api/settings');
+    const d = await r.json();
+    document.getElementById('set-port').value = d.port || '';
+    document.getElementById('set-ws-port').value = d.ws_port || '';
+    document.getElementById('set-heartbeat-interval').value = d.heartbeat_interval || '';
+    document.getElementById('set-heartbeat-timeout').value = d.heartbeat_timeout || '';
+    document.getElementById('set-auth-key').value = d.auth_key || '';
+    // TLS 开关
+    const tlsBtn = document.getElementById('set-tls');
+    tlsBtn.className = 'toggle' + (d.tls_enabled ? ' on' : '');
+    // 通知开关
+    const notifBtn = document.getElementById('set-notification');
+    notifBtn.className = 'toggle' + (d.notification_enabled ? ' on' : '');
+  } catch(e) {
+    console.error('设置加载失败:', e);
+  }
+}
+
+function toggleSwitch(el) {
+  el.classList.toggle('on');
+}
+
+let authVisible = false;
+function toggleAuthVisibility() {
+  const input = document.getElementById('set-auth-key');
+  authVisible = !authVisible;
+  input.type = authVisible ? 'text' : 'password';
+}
+
+async function saveSettings() {
+  const data = {
+    port: parseInt(document.getElementById('set-port').value) || undefined,
+    ws_port: parseInt(document.getElementById('set-ws-port').value) || undefined,
+    heartbeat_interval: parseInt(document.getElementById('set-heartbeat-interval').value) || undefined,
+    heartbeat_timeout: parseInt(document.getElementById('set-heartbeat-timeout').value) || undefined,
+    auth_key: document.getElementById('set-auth-key').value,
+    tls_enabled: document.getElementById('set-tls').classList.contains('on'),
+    notification_enabled: document.getElementById('set-notification').classList.contains('on'),
+  };
+  // 移除 undefined 值
+  Object.keys(data).forEach(k => data[k] === undefined && delete data[k]);
+  try {
+    const r = await fetch('/api/settings', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    const d = await r.json();
+    if (d.ok) {
+      showToast('设置已保存', 'online');
+    } else {
+      alert(d.error || '保存失败');
+    }
+  } catch(e) {
+    alert('保存失败：' + e);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// 实时事件通知 (WebSocket)
+// ═══════════════════════════════════════════════
+function connectEventsWs() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const evWs = new WebSocket(`${proto}//${location.host}/api/events`);
+  evWs.onmessage = e => {
+    try {
+      const ev = JSON.parse(e.data);
+      handleEvent(ev);
+    } catch(_) {}
+  };
+  evWs.onclose = () => {
+    setTimeout(connectEventsWs, 3000);
+  };
+  evWs.onerror = () => { evWs.close(); };
+}
+
+function handleEvent(ev) {
+  const type = ev.type;
+  let msg = '', toastType = '';
+  if (type === 'online') {
+    msg = (ev.data && ev.data.hostname ? ev.data.hostname : ev.client_id) + ' 已上线';
+    toastType = 'online';
+  } else if (type === 'offline') {
+    msg = (ev.data && ev.data.hostname ? ev.data.hostname : ev.client_id) + ' 已离线';
+    toastType = 'offline';
+  } else if (type === 'alert') {
+    msg = (ev.data && ev.data.hostname ? ev.data.hostname : ev.client_id) + ' 异常：' + (ev.data && ev.data.message ? ev.data.message : type);
+    toastType = 'alert';
+  } else {
+    return; // 忽略其他事件
+  }
+  showToast(msg, toastType);
+  // 如果在仪表盘页面，刷新数据
+  if (currentPage === 'dashboard') loadDashboard();
+  if (currentPage === 'devices') loadDevices();
+}
+
+// ═══════════════════════════════════════════════
+// Toast 通知
+// ═══════════════════════════════════════════════
+function showToast(msg, type) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + (type || '');
+  const icons = { online: '🟢', offline: '🔴', alert: '⚠️' };
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || 'ℹ️'}</span><span>${esc(msg)}</span>`;
+  container.appendChild(toast);
+  // 3 秒后淡出
+  setTimeout(() => {
+    toast.classList.add('out');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ═══════════════════════════════════════════════
+// 工具函数
+// ═══════════════════════════════════════════════
 function esc(s) {
+  if (s == null) return '';
   const d = document.createElement('div');
-  d.textContent = s;
+  d.textContent = String(s);
   return d.innerHTML;
+}
+
+// ═══════════════════════════════════════════════
+// 初始化
+// ═══════════════════════════════════════════════
+(function init() {
+  // 加载仪表盘
+  loadDashboard();
+  startDashboardTimer();
+  // 加载设置（预加载）
+  loadSettings();
+  // 连接事件 WebSocket
+  connectEventsWs();
+})();
+</script>
+<!-- 分组选择模态对话框 -->
+<div id="group-modal" class="modal" style="display:none">
+  <div class="modal-content">
+    <h3>设置设备分组</h3>
+    <p style="color:#565f89;font-size:13px;margin-bottom:10px">请先在"分组管理"中添加分组</p>
+    <select id="modal-group-select" style="width:100%;padding:10px;margin:10px 0;font-size:14px">
+      <option value="">无分组</option>
+    </select>
+    <div class="modal-buttons">
+      <button onclick="confirmGroup()" style="padding:8px 20px;background:#7aa2f7;color:#1a1b26;border:none;border-radius:4px;cursor:pointer">确定</button>
+      <button onclick="closeGroupModal()" style="padding:8px 20px;background:#565f89;color:#c0caf5;border:none;border-radius:4px;cursor:pointer">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let _groupModalDeviceId = null;
+
+async function setDeviceGroup(id, current) {
+  _groupModalDeviceId = id;
+  // 获取现有分组列表
+  try {
+    const r = await fetch('/api/groups');
+    const groups = await r.json() || [];
+    const sel = document.getElementById('modal-group-select');
+    sel.innerHTML = '<option value="">无分组</option>' + groups.map(g => 
+      `<option value="${esc(g)}"${g===current?' selected':''}>${esc(g)}</option>`
+    ).join('');
+    document.getElementById('group-modal').style.display = 'flex';
+  } catch(e) {
+    alert('获取分组列表失败：' + e);
+  }
+}
+
+function closeGroupModal() {
+  document.getElementById('group-modal').style.display = 'none';
+  _groupModalDeviceId = null;
+}
+
+async function confirmGroup() {
+  if (!_groupModalDeviceId) return;
+  const group = document.getElementById('modal-group-select').value;
+  
+  try {
+    await fetch('/api/devices/' + _groupModalDeviceId + '/group', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({group})
+    });
+    closeGroupModal();
+    loadDevices();
+  } catch(e) { alert('分组设置失败：' + e); }
 }
 </script>
 </body>

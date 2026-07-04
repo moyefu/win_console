@@ -1,0 +1,37 @@
+- [x] 共享协议层：common/protocol.py 定义了所有消息类型、消息格式和序列化函数
+- [x] 共享加密：common/crypto.py 支持 TLS 上下文创建和自签名证书生成
+- [x] 共享配置：common/config.py 定义了服务端和客户端共享的默认参数
+- [x] 客户端核心：client/core.py 可建立 WebSocket 连接、自动重连、完成注册和心跳
+- [x] 客户端截图：client/handlers/screenshot.py 接收截屏指令并返回 JPEG 数据
+- [x] 客户端进程管理：client/handlers/process.py 返回进程列表并支持 kill 操作
+- [x] 客户端终端：client/handlers/terminal.py 实现 WebSocket 通道代理 cmd/bash
+- [x] 客户端鼠标控制：client/handlers/mouse.py 代理所有鼠标操作
+- [x] 客户端键盘控制：client/handlers/keyboard.py 代理键盘输入和热键
+- [x] 客户端按键记录：client/handlers/keylog.py 实时上报按键事件
+- [x] 客户端跨平台：Windows/Linux/macOS 三平台的截图、终端、自启动适配正确
+- [x] 客户端安装：install -server=ip:port 命令正确安装、注册自启动、保存服务端地址
+- [x] 客户端卸载：uninstall 命令正确移除自启动项和安装目录
+- [x] 客户端无 GUI：运行时不显示窗口和托盘图标
+- [x] 服务端客户端管理：ClientManager 维护客户端连接、注册、心跳、离线检测
+- [x] 服务端心跳检测：30 秒超时正确标记离线，触发状态变更事件
+- [x] 服务端指令转发：Web API 请求正确转发至指定客户端并返回响应
+- [x] 服务端分组管理：分组 CRUD 正常，设备可按分组筛选
+- [x] 服务端持久化：设备信息和分组重启后可从 JSON 文件恢复
+- [x] 服务端 Web API - 仪表盘：GET /api/dashboard 返回正确的统计数据
+- [x] 服务端 Web API - 设备管理：设备列表支持按状态/分组/搜索筛选
+- [x] 服务端 Web API - 设备详情：GET /api/devices/<id> 返回完整设备信息
+- [x] 服务端 Web API - 远程控制代理：所有 /api/devices/<id>/xxx 请求正确转发到客户端
+- [x] 服务端 Web API - 设置：GET/POST /api/settings 读写配置正确
+- [x] 服务端 Web API - 事件推送：WS /api/events 正确推送设备上下线和异常事件
+- [x] 服务端入口：main.py 正确解析命令行参数并初始化各模块
+- [x] 服务端托盘：--tray 模式下托盘图标正常工作
+- [x] Web 仪表盘页面：统计卡片和异常警报列表正确展示
+- [x] Web 设备管理页面：设备表格、筛选、分组管理功能正常
+- [x] Web 设备详情页面：设备信息、资源监控、6 个远程控制子页面功能正常
+- [x] Web 设置页面：服务端参数、认证密钥、TLS、通知配置可读写
+- [x] Web 实时通知：设备状态变化时右上角 Toast 通知弹出
+- [x] Web 侧边栏：导航结构为仪表盘/设备管理/设备详情/设置
+- [x] 通信加密：TLS 模式下 wss:// 通信正常；无证书时回退 ws:// 并显示警告
+- [x] 单端口通信：所有消息类型通过同一 WebSocket 端口完成
+- [x] 构建脚本：build_server.bat 和 build_client.bat 可正确打包
+- [x] 依赖拆分：server/requirements.txt 和 client/requirements.txt 独立且正确

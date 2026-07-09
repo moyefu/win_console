@@ -5,6 +5,7 @@ import ssl
 import os
 import ipaddress
 import logging
+import socket
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,32 @@ def generate_self_signed_cert(cert_dir: str):
             x509.NameAttribute(NameOID.COMMON_NAME, "WinConsole"),
         ])
 
+        san_entries = [
+            x509.DNSName("localhost"),
+            x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
+        ]
+        try:
+            hostname = socket.gethostname()
+            if hostname:
+                san_entries.append(x509.DNSName(hostname))
+        except Exception:
+            pass
+        try:
+            fqdn = socket.getfqdn()
+            if fqdn and fqdn != socket.gethostname():
+                san_entries.append(x509.DNSName(fqdn))
+        except Exception:
+            pass
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            local_ip = s.getsockname()[0]
+            s.close()
+            if local_ip and local_ip != "127.0.0.1":
+                san_entries.append(x509.IPAddress(ipaddress.IPv4Address(local_ip)))
+        except Exception:
+            pass
+
         # 构建证书
         cert = (
             x509.CertificateBuilder()
@@ -62,13 +89,7 @@ def generate_self_signed_cert(cert_dir: str):
             .serial_number(x509.random_serial_number())
             .not_valid_before(datetime.datetime.utcnow())
             .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=365))
-            .add_extension(
-                x509.SubjectAlternativeName([
-                    x509.DNSName("localhost"),
-                    x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
-                ]),
-                critical=False,
-            )
+            .add_extension(x509.SubjectAlternativeName(san_entries), critical=False)
             .sign(key, hashes.SHA256())
         )
 
@@ -97,11 +118,12 @@ def generate_self_signed_cert(cert_dir: str):
         return None
 
 
-def create_ssl_context(cert_dir: str):
+def create_ssl_context(cert_dir: str, auto_generate: bool = False):
     """从 cert_dir 加载证书创建 ssl.SSLContext。
 
     Args:
         cert_dir: 包含 cert.pem 和 key.pem 的目录
+        auto_generate: 证书不存在时是否自动生成自签名证书
 
     Returns:
         ssl.SSLContext 实例；
@@ -114,6 +136,9 @@ def create_ssl_context(cert_dir: str):
     try:
         cert_path = os.path.join(cert_dir, "cert.pem")
         key_path = os.path.join(cert_dir, "key.pem")
+
+        if auto_generate and (not os.path.exists(cert_path) or not os.path.exists(key_path)):
+            generate_self_signed_cert(cert_dir)
 
         if not os.path.exists(cert_path) or not os.path.exists(key_path):
             logger.error("证书文件不存在: %s / %s", cert_path, key_path)

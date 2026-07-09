@@ -66,16 +66,20 @@ _PLIST_LABEL = "com.winconsole.client"
 # 4.5 保存配置文件
 # ======================================================================
 
-def _save_config(server_addr):
+def _save_config(server_addr, auth_key='', tls_enabled=False, tls_verify=True, ca_cert=''):
     """保存服务端地址到配置文件。
 
     配置文件路径: ~/.winconsole-client/config.json
-    内容: {"server_addr": "ip:port", "installed_at": "iso_timestamp"}
+    内容: {"server_addr": "ip:port", "auth_key": "...", "installed_at": "iso_timestamp"}
     """
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     config_file = CONFIG_DIR / 'config.json'
     config = {
         'server_addr': server_addr,
+        'auth_key': auth_key,
+        'tls_enabled': bool(tls_enabled),
+        'tls_verify': bool(tls_verify),
+        'ca_cert': ca_cert or '',
         'installed_at': datetime.now(timezone.utc).isoformat(),
     }
     with open(config_file, 'w', encoding='utf-8') as f:
@@ -348,11 +352,15 @@ def _get_install_dir():
 # 4.1 install 命令
 # ======================================================================
 
-def install(server_addr):
+def install(server_addr, auth_key='', tls_enabled=False, tls_verify=True, ca_cert=''):
     """安装客户端到系统并注册自启动。
 
     Args:
         server_addr: 服务端地址，格式 "ip:port"
+        auth_key: 客户端注册认证密钥
+        tls_enabled: 是否使用 wss:// 连接服务端
+        tls_verify: 是否校验证书
+        ca_cert: 自定义 CA 证书路径
     """
     _setup_installer_logging()
     system = platform.system()
@@ -369,6 +377,10 @@ def install(server_addr):
     _step("=" * 60)
     _step(f"[1/5] 准备安装：{install_dir}")
     _step(f"      服务端地址: {server_addr}")
+    _step(f"      客户端认证: {'已配置' if auth_key else '未配置'}")
+    _step(f"      TLS: {'启用' if tls_enabled else '禁用'}")
+    if tls_enabled:
+        _step(f"      TLS 证书校验: {'启用' if tls_verify else '已关闭'}")
     _step(f"      运行模式: {'frozen (PyInstaller)' if getattr(sys, 'frozen', False) else '源码'}")
     _step("=" * 60)
 
@@ -525,7 +537,8 @@ def install(server_addr):
 
     # 保存配置文件
     _step("[4/5] 保存配置 ...")
-    _save_config(server_addr)
+    _save_config(server_addr, auth_key=auth_key, tls_enabled=tls_enabled,
+                 tls_verify=tls_verify, ca_cert=ca_cert)
 
     # 注册自启动
     _step("[5/5] 注册开机自启动 ...")
@@ -558,6 +571,7 @@ def install(server_addr):
     _step("[SUCCESS] 客户端安装成功！")
     _step(f"  安装目录: {install_dir}")
     _step(f"  服务端地址: {server_addr}")
+    _step(f"  TLS: {'启用' if tls_enabled else '禁用'}")
     _step(f"  自启动: {'已启用' if startup_ok else '未启用'}")
     _step("=" * 60)
 

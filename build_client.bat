@@ -6,7 +6,7 @@ echo ========================================
 echo.
 
 REM Install dependencies
-pip install -r client\requirements.txt
+pip install -e ".[client]"
 
 REM Clean previous builds
 if exist dist\client rmdir /s /q dist\client

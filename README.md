@@ -26,7 +26,7 @@
 ### 1. 启动服务端
 
 ```bash
-pip install -r server/requirements.txt
+pip install -e ".[server]"
 python -m server.main
 ```
 
@@ -34,19 +34,25 @@ python -m server.main
 
 服务端监听 HTTP 端口 9081（Web 面板 + REST API），客户端 WebSocket 端口 9082。
 
+首次访问需要在服务端本机完成初始化，设置管理员密码。初始化完成后，Web 面板和 API 都需要登录才能访问。
+
+客户端认证密钥会自动生成，可在 Web 面板「设置 → 客户端认证密钥」查看或重新生成。
+
 ### 2. 安装客户端
 
 在客户端机器上执行：
 
 ```bash
-pip install -r client/requirements.txt
+pip install -e ".[client]"
 
 # 安装并连接服务端（自动注册开机自启）
-python -m client.main install -server=192.168.1.100:9082
+python -m client.main install -server=192.168.1.100:9082 -auth-key=从设置页复制的客户端认证密钥
 
 # 或临时指定服务端地址运行
-python -m client.main --server 192.168.1.100:9082
+python -m client.main --server 192.168.1.100:9082 -auth-key=从设置页复制的客户端认证密钥
 ```
+
+如果服务端启用了 TLS，客户端也需要加上 `--tls`。使用项目自动生成的自签名证书时，可在可信内网中临时加 `--tls-insecure`；更推荐分发证书并通过 `--ca-cert <证书路径>` 校验服务端证书。
 
 ### 3. 编译为 EXE
 
@@ -68,7 +74,7 @@ build_client.bat
 
 客户端部署示例：
 ```bash
-WinConsoleClient.exe install -server=192.168.1.100:9082
+WinConsoleClient.exe install -server=192.168.1.100:9082 -auth-key=从设置页复制的客户端认证密钥
 ```
 
 ## 命令行参数
@@ -89,11 +95,14 @@ WinConsoleClient.exe install -server=192.168.1.100:9082
 
 | 参数 | 说明 |
 |------|------|
-| `install -server=ip:port` | 安装客户端，注册开机自启，连接服务端（默认静默安装） |
-| `install -server=ip:port -cmd` | 安装客户端，显示控制台窗口并输出安装进度 |
-| `install -server=ip:port -no-test` | 安装客户端，跳过连接测试 |
+| `install -server=ip:port -auth-key=密钥` | 安装客户端，注册开机自启，连接服务端（默认静默安装） |
+| `install -server=ip:port -auth-key=密钥 -cmd` | 安装客户端，显示控制台窗口并输出安装进度 |
+| `install -server=ip:port -auth-key=密钥 -no-test` | 安装客户端，跳过连接测试 |
 | `uninstall` | 卸载客户端，移除自启和安装目录 |
-| `--server ip:port` | 临时指定服务端地址运行 |
+| `--server ip:port -auth-key=密钥` | 临时指定服务端地址运行 |
+| `--tls` | 使用 `wss://` 连接服务端 |
+| `--tls-insecure` | 使用 TLS 但不校验证书（仅限可信内网自签名场景） |
+| `--ca-cert <路径>` | 使用指定 CA/证书文件校验服务端证书 |
 
 ## 项目结构
 
@@ -114,7 +123,7 @@ win_console/
 │   │   ├── remote.py          # 远程控制代理
 │   │   ├── settings.py        # 服务端配置
 │   │   └── events.py          # 实时事件推送
-│   └── requirements.txt
+│   └── (依赖见根 requirements.txt [server])
 ├── client/                    # 客户端
 │   ├── main.py                # 入口
 │   ├── core.py                # WebSocket 连接、心跳、自动重连
@@ -127,12 +136,13 @@ win_console/
 │   │   ├── keyboard.py        # 键盘控制
 │   │   ├── keylog.py          # 按键记录
 │   │   └── system_info.py     # 系统资源信息（CPU/内存）
-│   └── requirements.txt
+│   └── (依赖见根 requirements.txt [client])
 ├── templates/
 │   └── index.html             # Web 管理面板
 ├── build_server.bat           # 服务端打包脚本
 ├── build_client.bat           # 客户端打包脚本
-└── requirements.txt           # 合并依赖
+├── pyproject.toml             # 项目配置 + 依赖分组
+└── requirements.txt           # 统一依赖（extras: [server] / [client]）
 ```
 
 ## API 接口
@@ -207,11 +217,14 @@ win_console/
 
 ## 注意事项
 
+- 首次使用必须在服务端本机设置管理员密码；之后 Web 面板、REST API 和 WebSocket 管理通道都需要登录。
+- 客户端连接必须携带服务端生成的 `auth_key`，密钥错误会被拒绝注册。
+- 启用 TLS 后，服务端会自动准备自签名证书；正式或跨网段部署建议分发证书并使用 `--ca-cert` 校验，避免长期使用 `--tls-insecure`。
 - 仅限可信网络环境使用，不建议在公网暴露服务端口
 - 部分功能（如进程管理）可能需要管理员权限
 - 客户端无 GUI、无托盘图标，完全静默运行
 - 按键记录依赖 pynput，未安装时自动禁用
-- Windows 终端功能依赖 pywinpty（ConPTY），未安装时回退到管道模式（命令输出可能延迟）
+- Windows 终端功能已内置 pywinpty（打包时包含），无需手动安装
 - Linux/macOS 终端使用标准 pty 库，无需额外依赖
 
 ## 系统要求

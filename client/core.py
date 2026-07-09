@@ -8,6 +8,7 @@ import platform
 import logging
 import time
 import base64
+import ssl
 from pathlib import Path
 
 import websockets
@@ -23,16 +24,23 @@ from common.config import *
 class ClientEngine:
     """客户端核心引擎，管理与服务端的 WebSocket 连接及消息通信。"""
 
-    def __init__(self, server_addr, auth_key=''):
+    def __init__(self, server_addr, auth_key='', use_tls=False,
+                 tls_verify=True, ca_cert=''):
         """
         初始化客户端引擎。
 
         Args:
             server_addr: 服务端地址，格式 "ip:port"
             auth_key: 认证密钥（可选）
+            use_tls: 是否使用 wss:// 连接
+            tls_verify: 是否校验证书
+            ca_cert: 自定义 CA 证书路径
         """
         self.server_addr = server_addr
         self.auth_key = auth_key
+        self.use_tls = use_tls
+        self.tls_verify = tls_verify
+        self.ca_cert = ca_cert
         self.ws = None
         self.client_id = None
         self.running = False
@@ -47,9 +55,9 @@ class ClientEngine:
 
     async def connect(self):
         """连接服务端，注册并启动心跳和消息接收循环。"""
-        uri = f"ws://{self.server_addr}"
+        uri = self._build_uri()
         self.logger.info("正在连接服务端: %s", uri)
-        self.ws = await websockets.connect(uri)
+        self.ws = await websockets.connect(uri, ssl=self._build_ssl_context(uri))
         self.logger.info("已连接服务端")
 
         # 注册
@@ -103,7 +111,29 @@ class ClientEngine:
             self.client_id = ack_msg.get('client_id', '')
             self.logger.info("注册成功，client_id=%s", self.client_id)
         else:
-            self.logger.error("注册失败，收到异常响应: %s", ack_msg)
+            payload = ack_msg.get('payload', {})
+            error = payload.get('error', '未知错误') if isinstance(payload, dict) else '未知错误'
+            raise RuntimeError(f"注册失败: {error}")
+
+    def _build_uri(self):
+        """根据地址和 TLS 配置生成 WebSocket URI。"""
+        if self.server_addr.startswith(('ws://', 'wss://')):
+            return self.server_addr
+        scheme = 'wss' if self.use_tls else 'ws'
+        return f"{scheme}://{self.server_addr}"
+
+    def _build_ssl_context(self, uri):
+        """为 wss:// 连接创建 SSL 上下文。"""
+        if not uri.startswith('wss://'):
+            return None
+
+        if not self.tls_verify:
+            return ssl._create_unverified_context()
+
+        if self.ca_cert:
+            return ssl.create_default_context(cafile=self.ca_cert)
+
+        return ssl.create_default_context()
 
     @staticmethod
     def _get_local_ip():

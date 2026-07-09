@@ -56,6 +56,7 @@ import socket
 import asyncio
 import json
 import traceback
+import ssl
 from pathlib import Path
 
 # ---- 修复 PyInstaller --onefile 在 import 阶段注入 StreamHandler 导致的 Bad file descriptor ----
@@ -124,14 +125,21 @@ def get_local_ip():
         return '127.0.0.1'
 
 
-def _load_server_addr():
-    """从配置文件读取服务端地址。
+def _load_client_config(quiet=False):
+    """从配置文件读取客户端连接配置。
 
     兼容多个可能的位置（按优先级）：
       1) ~/.winconsole-client/config.json   (install 写入的位置)
       2) ~/.winconsole/server_config.json    (旧版 / 服务端共享配置)
       3) 兜底: 127.0.0.1:9082 (WebSocket 端口)
     """
+    result = {
+        'server_addr': f'127.0.0.1:{DEFAULT_WS_PORT}',
+        'auth_key': '',
+        'tls_enabled': False,
+        'tls_verify': True,
+        'ca_cert': '',
+    }
     candidates = [
         Path.home() / '.winconsole-client' / 'config.json',
         Path(SERVER_CONFIG_FILE),
@@ -142,14 +150,25 @@ def _load_server_addr():
                 with open(config_file, 'r', encoding='utf-8') as f:
                     config = json.load(f)
                     addr = config.get('server_addr', '')
+                    if not addr and 'ws_port' in config:
+                        addr = f"127.0.0.1:{config.get('ws_port', DEFAULT_WS_PORT)}"
                     if addr and not _looks_truncated(addr):
-                        return addr
+                        result['server_addr'] = addr
+                        result['auth_key'] = config.get('auth_key', result['auth_key'])
+                        result['tls_enabled'] = bool(config.get('tls_enabled', result['tls_enabled']))
+                        result['tls_verify'] = bool(config.get('tls_verify', result['tls_verify']))
+                        result['ca_cert'] = config.get('ca_cert', result['ca_cert'])
+                        return result
             except Exception:
                 pass
-    print("未找到服务端地址配置，请使用 install -host ip -port port 安装，或 --server 指定地址")
-    # 兜底：必须用 127.0.0.1（DEFAULT_HOST='0.0.0.0' 是服务端绑定地址，
-    # 客户端拿去连接会得到 [WinError 1214] 指定的网络名格式无效）
-    return f'127.0.0.1:{DEFAULT_WS_PORT}'
+    if not quiet:
+        print("未找到服务端地址配置，请使用 install -host ip -port port 安装，或 --server 指定地址")
+    return result
+
+
+def _load_server_addr():
+    """从配置文件读取服务端地址。"""
+    return _load_client_config()['server_addr']
 
 
 def _looks_truncated(addr):
@@ -198,11 +217,11 @@ def _parse_install_server_arg(args):
     i = 0
     while i < len(args):
         a = args[i]
-        if a in ('-host', '-h') and i + 1 < len(args):
+        if a in ('-host', '--host', '-h') and i + 1 < len(args):
             host = args[i + 1]
             i += 2
             continue
-        if a in ('-port', '-p') and i + 1 < len(args):
+        if a in ('-port', '--port', '-p') and i + 1 < len(args):
             port = args[i + 1]
             i += 2
             continue
@@ -213,6 +232,78 @@ def _parse_install_server_arg(args):
         return f'{host}:{DEFAULT_WS_PORT}'
     # 4) 兜底默认值：WebSocket 端口（不是 HTTP 端口）
     return f'{DEFAULT_HOST}:{DEFAULT_WS_PORT}'
+
+
+def _parse_value_arg(args, names, default=''):
+    """解析 --name=value 或 --name value 形式的参数。"""
+    for arg in args:
+        for name in names:
+            prefix = name + '='
+            if arg.startswith(prefix):
+                return arg.split('=', 1)[1].strip()
+
+    for i, arg in enumerate(args):
+        if arg in names and i + 1 < len(args):
+            return args[i + 1].strip()
+
+    return default
+
+
+def _parse_auth_key_arg(args, default=''):
+    """解析客户端注册认证密钥。"""
+    return _parse_value_arg(args, ('-auth-key', '--auth-key', '-key', '--key'), default)
+
+
+def _parse_tls_args(args, defaults=None):
+    """解析 TLS 相关参数。"""
+    defaults = defaults or {}
+    tls_enabled = bool(defaults.get('tls_enabled', False))
+    tls_verify = bool(defaults.get('tls_verify', True))
+    ca_cert = defaults.get('ca_cert', '')
+
+    if '--tls' in args or '-tls' in args:
+        tls_enabled = True
+    if '--no-tls' in args:
+        tls_enabled = False
+    if '--tls-insecure' in args or '--no-tls-verify' in args:
+        tls_verify = False
+    if '--tls-verify' in args:
+        tls_verify = True
+
+    ca_cert = _parse_value_arg(args, ('--ca-cert', '-ca-cert'), ca_cert)
+    return tls_enabled, tls_verify, ca_cert
+
+
+def _build_ws_uri(server_addr, tls_enabled):
+    """构造 WebSocket URI。"""
+    if server_addr.startswith(('ws://', 'wss://')):
+        return server_addr
+    return f"{'wss' if tls_enabled else 'ws'}://{server_addr}"
+
+
+def _build_ssl_context_for_uri(uri, tls_verify=True, ca_cert=''):
+    """为连接测试创建 SSL 上下文。"""
+    if not uri.startswith('wss://'):
+        return None
+    if not tls_verify:
+        return ssl._create_unverified_context()
+    if ca_cert:
+        return ssl.create_default_context(cafile=ca_cert)
+    return ssl.create_default_context()
+
+
+def _split_server_addr(server_addr, default_tls=False):
+    """拆出主机和端口，支持 ip:port、ws://、wss://。"""
+    if server_addr.startswith(('ws://', 'wss://')):
+        from urllib.parse import urlparse
+        parsed = urlparse(server_addr)
+        return parsed.hostname or '', parsed.port or DEFAULT_WS_PORT
+
+    if ':' not in server_addr:
+        return server_addr, DEFAULT_WS_PORT
+
+    host, port_str = server_addr.rsplit(':', 1)
+    return host, int(port_str)
 
 
 def _attach_console():
@@ -304,7 +395,7 @@ def _setup_logging():
     )
 
 
-def test_connection(server_addr):
+def test_connection(server_addr, tls_enabled=False, tls_verify=True, ca_cert=''):
     """测试到服务端的网络连通性，结果逐行回显 + 写入 install.log。
 
     依次进行：
@@ -355,17 +446,14 @@ def test_connection(server_addr):
             # 完全吞掉 logging 异常（不影响 print 输出）
             pass
 
-    _emit(f"=== 测试连接: {server_addr} ===")
+    uri = _build_ws_uri(server_addr, tls_enabled)
+    _emit(f"=== 测试连接: {uri} ===")
     _emit(f"本机 IP: {get_local_ip()}")
 
-    if ':' not in server_addr:
-        _emit(f"[FAIL] 地址格式错误: {server_addr}  (应为 ip:port)")
-        return False
-    host, port_str = server_addr.rsplit(':', 1)
     try:
-        port = int(port_str)
+        host, port = _split_server_addr(server_addr)
     except ValueError:
-        _emit(f"[FAIL] 端口不是数字: {port_str}")
+        _emit(f"[FAIL] 地址格式错误: {server_addr}  (应为 ip:port)")
         return False
 
     # 1) 地址解析
@@ -406,12 +494,15 @@ def test_connection(server_addr):
         try:
             ws = loop.run_until_complete(
                 asyncio.wait_for(
-                    websockets.connect(f"ws://{host}:{port}"),
+                    websockets.connect(
+                        uri,
+                        ssl=_build_ssl_context_for_uri(uri, tls_verify, ca_cert),
+                    ),
                     timeout=5,
                 )
             )
             try:
-                ws.close()
+                loop.run_until_complete(ws.close())
             except Exception:
                 pass
             _emit(f"      -> OK")
@@ -433,9 +524,15 @@ def main():
     # ---- 解析命令行参数 ----
     if not args:
         # 无参数：从配置文件读取服务端地址
-        server_addr = _load_server_addr()
+        client_config = _load_client_config()
+        server_addr = client_config['server_addr']
+        auth_key = client_config.get('auth_key', '')
+        tls_enabled = client_config.get('tls_enabled', False)
+        tls_verify = client_config.get('tls_verify', True)
+        ca_cert = client_config.get('ca_cert', '')
 
     elif args[0] == 'install':
+        defaults = _load_client_config(quiet=True)
         # 检查是否有 -cmd 参数
         show_console = False
         for a in args[1:]:
@@ -451,10 +548,15 @@ def main():
         server_addr = _parse_install_server_arg(args)
         if not server_addr:
             if show_console:
-                print("用法: WinConsoleClient install -server=ip:port [-cmd] [-no-test]")
-                print("     或: WinConsoleClient install -host ip -port port [-cmd] [-no-test]")
+                print("用法: WinConsoleClient install -server=ip:port -auth-key=密钥 [-cmd] [-no-test]")
+                print("     或: WinConsoleClient install -host ip -port port -auth-key 密钥 [-cmd] [-no-test]")
                 _pause()
             sys.exit(1)
+
+        auth_key = _parse_auth_key_arg(args, defaults.get('auth_key', ''))
+        tls_enabled, tls_verify, ca_cert = _parse_tls_args(args, defaults)
+        if not auth_key and show_console:
+            print("[WARN] 未提供 -auth-key，默认安全配置下客户端将无法完成注册。", flush=True)
 
         # 检测参数被 PowerShell 截断（如只剩 '127' 这种纯数字段）
         if _looks_truncated(server_addr):
@@ -494,7 +596,7 @@ def main():
             print("=" * 60, flush=True)
             print(f"  [Pre-Install] 测试连接到 {server_addr}", flush=True)
             print("=" * 60, flush=True)
-            ok = test_connection(server_addr)
+            ok = test_connection(server_addr, tls_enabled, tls_verify, ca_cert)
             print("=" * 60, flush=True)
             if not ok:
                 print("[WARN] 连接测试未通过，仍然继续安装（你可以用 uninstall 移除）", flush=True)
@@ -504,11 +606,12 @@ def main():
             print(flush=True)
         elif do_test:
             # 没有 -cmd 参数时，静默测试连接
-            test_connection(server_addr)
+            test_connection(server_addr, tls_enabled, tls_verify, ca_cert)
 
         try:
             from client.installer import install
-            install(server_addr)
+            install(server_addr, auth_key=auth_key, tls_enabled=tls_enabled,
+                    tls_verify=tls_verify, ca_cert=ca_cert)
         except Exception as e:
             if show_console:
                 print(f"\n[ERROR] 安装失败: {e}")
@@ -537,12 +640,14 @@ def main():
         sys.exit(0)
 
     elif args[0] == 'test':
+        defaults = _load_client_config(quiet=True)
         # 测试到服务端的连接
         _attach_console()
         if len(args) > 1:
             server_addr = _parse_install_server_arg(args)
         else:
             server_addr = f'{DEFAULT_HOST}:{DEFAULT_WS_PORT}'
+        tls_enabled, tls_verify, ca_cert = _parse_tls_args(args, defaults)
 
         # 检测参数被 PowerShell 截断
         if _looks_truncated(server_addr):
@@ -556,32 +661,38 @@ def main():
             _pause()
             sys.exit(1)
 
-        ok = test_connection(server_addr)
+        ok = test_connection(server_addr, tls_enabled, tls_verify, ca_cert)
         _pause()
         sys.exit(0 if ok else 2)
 
-    elif args[0] == '--server':
+    elif args[0] in ('--server', '-server', '--host', '-host'):
+        defaults = _load_client_config(quiet=True)
         # 临时指定服务端地址
         if len(args) < 2:
             print("用法: winconsole-client --server ip:port")
             print("  或: winconsole-client --host ip --port port")
             sys.exit(1)
         # 支持 -server ip:port 和 --host ip --port port 两种
-        server_addr = _parse_install_server_arg(args[1:])
+        server_addr = _parse_install_server_arg(args)
         if _looks_truncated(server_addr):
             print(f"[ERROR] 服务端地址格式异常: {server_addr}", flush=True)
             print('请用引号包参数: --server "ip:port" 或 --host ip --port port', flush=True)
             sys.exit(1)
+        auth_key = _parse_auth_key_arg(args, defaults.get('auth_key', ''))
+        tls_enabled, tls_verify, ca_cert = _parse_tls_args(args, defaults)
 
     else:
         print("用法:")
         print("  WinConsoleClient                                  启动客户端（从配置文件读取服务端地址）")
-        print('  WinConsoleClient --server "ip:port"               启动客户端（临时指定，PowerShell 需要引号）')
-        print('  WinConsoleClient install "-server=ip:port" [-cmd] [-no-test]')
+        print('  WinConsoleClient --server "ip:port" -auth-key=密钥  启动客户端（临时指定）')
+        print('  WinConsoleClient install "-server=ip:port" -auth-key=密钥 [-cmd] [-no-test]')
         print('                                                    安装并注册自启动（默认静默，PowerShell 需要引号）')
-        print("  WinConsoleClient install -host ip -port port     安装（无冒号，PowerShell 友好）")
+        print("  WinConsoleClient install -host ip -port port -auth-key 密钥")
         print("  -cmd: 显示控制台窗口并输出安装进度")
         print("  -no-test: 跳过连接测试")
+        print("  --tls: 使用 wss:// 连接服务端")
+        print("  --tls-insecure: 使用 TLS 但不校验证书（仅适合自签名内网场景）")
+        print("  --ca-cert path: 使用指定 CA 证书校验服务端")
         print("  WinConsoleClient uninstall                        卸载")
         print('  WinConsoleClient test "-server=ip:port"           测试到服务端的连接并回显')
         print("  WinConsoleClient test -host ip -port port         测试连接（无冒号）")
@@ -596,7 +707,8 @@ def main():
     _hide_console_on_run()
 
     # ---- 创建引擎 ----
-    engine = ClientEngine(server_addr)
+    engine = ClientEngine(server_addr, auth_key=auth_key, use_tls=tls_enabled,
+                          tls_verify=tls_verify, ca_cert=ca_cert)
 
     # ---- 注册功能模块 handler ----
     engine.register_handler(MsgType.SCREENSHOT, handle_screenshot)

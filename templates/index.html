@@ -253,6 +253,9 @@ tr:hover td{background:#1f2130}
     <a data-page="settings" onclick="navigateTo('settings')">
       <span class="icon">⚙️</span><span class="label">设置</span>
     </a>
+    <a href="/logout">
+      <span class="icon">⏻</span><span class="label">退出登录</span>
+    </a>
   </nav>
 </div>
 
@@ -504,14 +507,20 @@ tr:hover td{background:#1f2130}
       </div>
     </div>
     <div class="form-group">
-      <label>认证密钥</label>
+      <label>客户端认证密钥</label>
       <div class="auth-row">
         <input type="password" id="set-auth-key" placeholder="未设置">
         <button onclick="toggleAuthVisibility()">显示</button>
+        <button onclick="generateAuthKey()">生成</button>
       </div>
+      <div class="hint">安装客户端时需要携带这个密钥。</div>
+    </div>
+    <div class="form-group">
+      <label>管理密码</label>
+      <input type="password" id="set-admin-password" placeholder="留空则不修改">
     </div>
     <div class="toggle-row">
-      <div><div class="toggle-label">启用 TLS</div><div class="toggle-hint">使用 HTTPS 加密通信</div></div>
+      <div><div class="toggle-label">启用 TLS</div><div class="toggle-hint">Web 面板和客户端 WebSocket 使用加密连接</div></div>
       <button class="toggle" id="set-tls" onclick="toggleSwitch(this)"></button>
     </div>
     <div class="toggle-row">
@@ -1181,6 +1190,7 @@ async function loadSettings() {
     document.getElementById('set-heartbeat-interval').value = d.heartbeat_interval || '';
     document.getElementById('set-heartbeat-timeout').value = d.heartbeat_timeout || '';
     document.getElementById('set-auth-key').value = d.auth_key || '';
+    document.getElementById('set-admin-password').value = '';
     // TLS 开关
     const tlsBtn = document.getElementById('set-tls');
     tlsBtn.className = 'toggle' + (d.tls_enabled ? ' on' : '');
@@ -1203,6 +1213,13 @@ function toggleAuthVisibility() {
   input.type = authVisible ? 'text' : 'password';
 }
 
+function generateAuthKey() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const key = btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  document.getElementById('set-auth-key').value = key;
+}
+
 async function saveSettings() {
   const data = {
     port: parseInt(document.getElementById('set-port').value) || undefined,
@@ -1213,6 +1230,8 @@ async function saveSettings() {
     tls_enabled: document.getElementById('set-tls').classList.contains('on'),
     notification_enabled: document.getElementById('set-notification').classList.contains('on'),
   };
+  const adminPassword = document.getElementById('set-admin-password').value;
+  if (adminPassword) data.admin_password = adminPassword;
   // 移除 undefined 值
   Object.keys(data).forEach(k => data[k] === undefined && delete data[k]);
   try {
@@ -1223,6 +1242,7 @@ async function saveSettings() {
     });
     const d = await r.json();
     if (d.ok) {
+      document.getElementById('set-admin-password').value = '';
       showToast('设置已保存', 'online');
     } else {
       alert(d.error || '保存失败');

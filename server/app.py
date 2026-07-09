@@ -35,6 +35,8 @@ def create_app(client_manager=None):
     """
     app = Flask(__name__, template_folder=get_template_dir())
     sock = Sock(app)
+    from server.auth import register_auth
+    register_auth(app)
 
     if client_manager is None:
         client_manager = ClientManager()

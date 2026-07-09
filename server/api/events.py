@@ -5,6 +5,8 @@ import threading
 import logging
 from datetime import datetime
 
+from server.auth import require_ws_auth
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,6 +50,9 @@ def register_events_ws(sock, cm):
         客户端连接后可持续接收服务端事件推送；
         仅接收，不处理客户端发送的数据。
         """
+        if not require_ws_auth(ws):
+            return
+
         with _event_ws_lock:
             _event_ws_clients.add(ws)
         try:

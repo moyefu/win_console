@@ -8,11 +8,13 @@ import atexit
 import logging
 import threading
 import asyncio
+import hmac
 
 # 添加项目根目录到 sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from common.config import DEFAULT_HOST, DEFAULT_PORT, DEFAULT_WS_PORT, CLIENT_WS_PORT_OFFSET, SERVER_CONFIG_FILE
+from server.config_store import load_settings
 
 # ── 日志配置 ──────────────────────────────────────────────────
 from pathlib import Path
@@ -117,6 +119,7 @@ except ImportError:
 
 # 端口号由 main() 传入，这里用模块级变量暂存
 _tray_port = DEFAULT_PORT
+_tray_tls_enabled = False
 
 
 def create_tray_image():
@@ -139,7 +142,8 @@ def create_tray_image():
 def on_tray_open():
     """打开浏览器访问 Web 面板。"""
     import webbrowser
-    webbrowser.open(f'http://127.0.0.1:{_tray_port}')
+    scheme = 'https' if _tray_tls_enabled else 'http'
+    webbrowser.open(f'{scheme}://127.0.0.1:{_tray_port}')
 
 
 def on_tray_exit(icon):
@@ -169,6 +173,18 @@ def setup_tray():
 
 
 # ── WebSocket 服务端（接收客户端连接） ─────────────────────────
+def _create_server_ssl_context(tls_enabled):
+    """按配置创建服务端 SSL 上下文。"""
+    if not tls_enabled:
+        return None
+    from common.crypto import create_ssl_context
+    cert_dir = os.path.join(Path.home(), '.winconsole', 'certs')
+    ssl_context = create_ssl_context(cert_dir, auto_generate=True)
+    if ssl_context is None:
+        logging.warning("TLS 已启用但证书不可用，将回退到明文通信")
+    return ssl_context
+
+
 def _start_ws_server(cm, host, port, tls_enabled):
     """在独立线程中运行 asyncio 事件循环，启动 WebSocket 服务端接收客户端连接。
 
@@ -182,11 +198,7 @@ def _start_ws_server(cm, host, port, tls_enabled):
     asyncio.set_event_loop(loop)
     cm._ws_loop = loop
 
-    ssl_context = None
-    if tls_enabled:
-        from common.crypto import create_ssl_context
-        cert_dir = os.path.join(Path.home(), '.winconsole', 'certs')
-        ssl_context = create_ssl_context(cert_dir)
+    ssl_context = _create_server_ssl_context(tls_enabled)
 
     import websockets
     from common.protocol import decode_msg, MsgType, make_msg, encode_msg
@@ -205,6 +217,25 @@ def _start_ws_server(cm, host, port, tls_enabled):
                 return
 
             device_info = msg.get('payload', {})
+
+            expected_auth_key = load_settings(create=True).get('auth_key', '')
+            provided_auth_key = device_info.get('auth_key', '')
+            if not expected_auth_key or not hmac.compare_digest(
+                str(provided_auth_key), str(expected_auth_key)
+            ):
+                logging.warning(
+                    "客户端认证失败: hostname=%s ip=%s",
+                    device_info.get('hostname', ''),
+                    device_info.get('ip', ''),
+                )
+                error_msg = make_msg(MsgType.ERROR, '', {
+                    'error': '认证失败',
+                    'code': 'AUTH_FAILED',
+                })
+                await ws.send(encode_msg(error_msg))
+                await ws.close(code=4003, reason="AUTH_FAILED")
+                return
+
             # 注册客户端
             client_id = await cm.register_client(ws, device_info)
 
@@ -272,7 +303,7 @@ def _start_ws_server(cm, host, port, tls_enabled):
 
 # ── 入口函数 ───────────────────────────────────────────────────
 def main():
-    global _tray_port
+    global _tray_port, _tray_tls_enabled
 
     args = sys.argv[1:]
 
@@ -335,6 +366,8 @@ def main():
     setup_logging()
     logging.info(f"WinConsole 服务端启动: {host}:{port}")
 
+    saved_settings = load_settings(create=True)
+
     # 创建 ClientManager 实例
     from server.client_manager import ClientManager
     cm = ClientManager()
@@ -348,17 +381,14 @@ def main():
         hide_console()
 
     # 从配置文件读取端口（如果命令行未指定）
-    try:
-        import json
-        if os.path.exists(SERVER_CONFIG_FILE):
-            with open(SERVER_CONFIG_FILE, 'r', encoding='utf-8') as f:
-                saved = json.load(f)
-            if '--port' not in args and 'port' in saved:
-                port = saved['port']
-            if '--ws-port' not in args and 'ws_port' in saved:
-                ws_port = saved['ws_port']
-    except Exception:
-        pass
+    if '--port' not in args and 'port' in saved_settings:
+        port = saved_settings['port']
+    if '--ws-port' not in args and 'ws_port' in saved_settings:
+        ws_port = saved_settings['ws_port']
+    if '--tls' not in args and saved_settings.get('tls_enabled'):
+        tls_enabled = True
+    _tray_port = port
+    _tray_tls_enabled = tls_enabled
 
     # 启动客户端 WebSocket 服务端（独立线程）
     ws_thread = threading.Thread(
@@ -370,7 +400,9 @@ def main():
 
     # 启动 Flask HTTP 服务（独立线程）
     def run_flask():
-        app.run(host=host, port=port, threaded=True, debug=False)
+        app_ssl_context = _create_server_ssl_context(tls_enabled)
+        app.run(host=host, port=port, threaded=True, debug=False,
+                ssl_context=app_ssl_context)
 
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()

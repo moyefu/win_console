@@ -17,6 +17,7 @@ class MsgType(Enum):
     DISCONNECT = "disconnect"         # 断开连接
     COMMAND = "command"               # 执行命令
     SCREENSHOT = "screenshot"         # 截图
+    SCREEN_DATA = "screen_data"       # 屏幕帧数据推送（实时流）
     PROCESS = "process"               # 进程列表
     TERMINAL = "terminal"             # 终端会话
     TERMINAL_DATA = "terminal_data"   # 终端数据
@@ -25,6 +26,12 @@ class MsgType(Enum):
     KEYLOG = "keylog"                 # 键盘记录请求
     KEYLOG_DATA = "keylog_data"       # 键盘记录数据
     SYSTEM_INFO = "system_info"       # 系统信息（CPU/内存使用率）
+    CAMERA = "camera"                 # 摄像头控制指令
+    CAMERA_DATA = "camera_data"       # 摄像头帧数据推送
+    DISK = "disk"                     # 硬盘信息请求/响应
+    FILE_TRANSFER = "file_transfer"   # 文件传输控制
+    FILE_TRANSFER_DATA = "file_transfer_data"  # 文件传输二进制数据块
+    FILE_MANAGER = "file_manager"     # 文件管理操作
     CONFIG = "config"                 # 配置
     ERROR = "error"                   # 错误
 

